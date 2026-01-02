@@ -3,16 +3,17 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { register, unregisterAll } from "@tauri-apps/plugin-global-shortcut";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useClipboard, type HistoryItem } from "./hooks/useClipboard";
-import { searchHistory } from "./lib/db";
-import { Search, X } from "lucide-react";
+import { searchHistory, deleteHistoryItem, clearAllHistory } from "./lib/db";
+import { Search, X, Trash2, Trash } from "lucide-react";
 import { format } from "date-fns";
 
 function App() {
-  const { history } = useClipboard();
+  const { history, refreshHistory } = useClipboard();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize window visibility
@@ -20,6 +21,19 @@ function App() {
     // Window starts hidden (visible: false in config)
     setIsVisible(false);
   }, []);
+
+  // Function to position window at cursor
+  // Note: True cursor positioning requires native macOS APIs
+  // For now, we center the window which works well for most use cases
+  const positionWindowAtCursor = async () => {
+    try {
+      const appWindow = getCurrentWindow();
+      // Center the window on the current monitor
+      await appWindow.center();
+    } catch (error) {
+      console.error("Failed to position window:", error);
+    }
+  };
 
   // Register global shortcut Cmd+Shift+V
   useEffect(() => {
@@ -32,6 +46,7 @@ function App() {
             await appWindow.hide();
             setIsVisible(false);
           } else {
+            await positionWindowAtCursor();
             await appWindow.show();
             await appWindow.setFocus();
             setIsVisible(true);
@@ -43,6 +58,7 @@ function App() {
         });
       } catch (error) {
         console.error("Failed to register global shortcut:", error);
+        setError("Failed to register keyboard shortcut");
       }
     };
 
@@ -164,14 +180,97 @@ function App() {
     }
   };
 
+  // Retry logic for clipboard operations
+  const retryOperation = async <T,>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> => {
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxRetries - 1) {
+          const delay = baseDelay * Math.pow(2, attempt);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+    throw lastError || new Error("Operation failed after retries");
+  };
+
   // Handle item click
   const handleItemClick = async (item: HistoryItem) => {
-    await writeText(item.content);
-    const appWindow = getCurrentWindow();
-    await appWindow.hide();
-    setIsVisible(false);
-    setSearchQuery("");
-    setSelectedIndex(0);
+    try {
+      setError(null);
+      await retryOperation(async () => {
+        await writeText(item.content);
+      });
+      const appWindow = getCurrentWindow();
+      await appWindow.hide();
+      setIsVisible(false);
+      setSearchQuery("");
+      setSelectedIndex(0);
+    } catch (error) {
+      setError(
+        `Failed to copy to clipboard: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  };
+
+  // Handle delete item
+  const handleDeleteItem = async (e: React.MouseEvent, itemId: number) => {
+    e.stopPropagation(); // Prevent item click
+    try {
+      setError(null);
+      await deleteHistoryItem(itemId);
+      await refreshHistory();
+      // Update filtered history if needed
+      if (searchQuery.trim() === "") {
+        const items = await searchHistory("");
+        setFilteredHistory(items);
+      } else {
+        const items = await searchHistory(searchQuery);
+        setFilteredHistory(items);
+      }
+      // Adjust selected index if needed
+      if (selectedIndex >= filteredHistory.length - 1) {
+        setSelectedIndex(Math.max(0, filteredHistory.length - 2));
+      }
+    } catch (error) {
+      setError(
+        `Failed to delete item: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  };
+
+  // Handle clear all history
+  const handleClearAll = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to clear all clipboard history? This action cannot be undone."
+      )
+    ) {
+      try {
+        setError(null);
+        await clearAllHistory();
+        await refreshHistory();
+        setFilteredHistory([]);
+        setSelectedIndex(0);
+      } catch (error) {
+        setError(
+          `Failed to clear history: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
   };
 
   // Truncate text for display
@@ -182,27 +281,50 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
+      {/* Error Message */}
+      {error && (
+        <div className="sticky top-0 z-20 bg-red-600 text-white px-3 py-2 text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="hover:bg-red-700 rounded p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Search Bar */}
       <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 p-3">
-        <div className="relative flex items-center">
-          <Search className="absolute left-3 text-gray-400 w-4 h-4" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search clipboard history..."
-            className="w-full pl-10 pr-10 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            autoFocus
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 text-gray-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        <div className="relative flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 text-gray-400 w-4 h-4 top-1/2 -translate-y-1/2" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search clipboard history..."
+              className="w-full pl-10 pr-10 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleClearAll}
+            className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center gap-1 transition-colors"
+            title="Clear all history"
+          >
+            <Trash className="w-4 h-4" />
+            <span>Clear All</span>
+          </button>
         </div>
       </div>
 
@@ -222,7 +344,7 @@ function App() {
               id={`history-item-${index}`}
               onClick={() => handleItemClick(item)}
               className={`
-                p-3 rounded-lg cursor-pointer transition-all duration-150
+                group p-3 rounded-lg cursor-pointer transition-all duration-150
                 ${
                   index === selectedIndex
                     ? "bg-blue-600 text-white shadow-lg"
@@ -234,18 +356,34 @@ function App() {
                 <p className="text-sm flex-1 break-words">
                   {truncateText(item.content)}
                 </p>
-                <span
-                  className={`
-                    text-xs whitespace-nowrap ml-2
-                    ${
-                      index === selectedIndex
-                        ? "text-blue-100"
-                        : "text-gray-400"
-                    }
-                  `}
-                >
-                  {formatDate(item.created_at)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`
+                      text-xs whitespace-nowrap
+                      ${
+                        index === selectedIndex
+                          ? "text-blue-100"
+                          : "text-gray-400"
+                      }
+                    `}
+                  >
+                    {formatDate(item.created_at)}
+                  </span>
+                  <button
+                    onClick={(e) => handleDeleteItem(e, item.id)}
+                    className={`
+                      p-1 rounded hover:bg-opacity-20 transition-colors
+                      ${
+                        index === selectedIndex
+                          ? "hover:bg-white text-white opacity-80 hover:opacity-100"
+                          : "text-gray-400 hover:text-red-400 hover:bg-red-500"
+                      }
+                    `}
+                    title="Delete item"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))

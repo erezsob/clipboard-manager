@@ -128,3 +128,14 @@ export async function deleteHistoryItem(id: number): Promise<void> {
 
   await db?.execute("DELETE FROM history WHERE id = $1", [id]);
 }
+
+/**
+ * Clear all history
+ */
+export async function clearAllHistory(): Promise<void> {
+  if (!db) {
+    await initDB();
+  }
+
+  await db?.execute("DELETE FROM history");
+}
