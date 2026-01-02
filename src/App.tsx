@@ -2,7 +2,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { register, unregisterAll } from "@tauri-apps/plugin-global-shortcut";
 import { format } from "date-fns";
-import { Search, Trash, Trash2, X } from "lucide-react";
+import { Copy, Search, Trash, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type HistoryItem, useClipboard } from "./hooks/useClipboard";
 import { clearAllHistory, deleteHistoryItem, searchHistory } from "./lib/db";
@@ -85,7 +85,7 @@ function App() {
 			if (typeof window !== "undefined" && window.__TAURI__) {
 				try {
 					unregisterAll();
-				} catch (error) {
+				} catch {
 					// Ignore errors during cleanup
 				}
 			}
@@ -364,11 +364,21 @@ function App() {
 					</div>
 				) : (
 					filteredHistory.map((item, index) => (
+						// biome-ignore lint/a11y/useSemanticElements: Need div with role="button" to allow nested buttons (Copy/Delete)
 						<div
 							key={item.id}
 							id={`history-item-${index}`}
+							onClick={() => handleItemClick(item)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									handleItemClick(item);
+								}
+							}}
+							role="button"
+							tabIndex={0}
 							className={`
-                group p-3 rounded-lg cursor-pointer transition-all duration-150
+                group relative p-3 rounded-lg cursor-pointer transition-all duration-150
                 ${
 									index === selectedIndex
 										? "bg-blue-600 text-white shadow-lg"
@@ -377,13 +387,13 @@ function App() {
               `}
 						>
 							<div className="flex items-start justify-between gap-2">
-								<p className="text-sm flex-1 break-words">
-									{truncateText(item.content)}
-								</p>
-								<div className="flex items-center gap-2">
+								<div className="flex-1 min-w-0">
+									<p className="text-sm break-words">
+										{truncateText(item.content)}
+									</p>
 									<span
 										className={`
-                      text-xs whitespace-nowrap
+                      text-xs whitespace-nowrap block mt-1
                       ${
 												index === selectedIndex
 													? "text-blue-100"
@@ -393,18 +403,46 @@ function App() {
 									>
 										{formatDate(item.created_at)}
 									</span>
+								</div>
+								
+								{/* Hover-reveal action buttons */}
+								<div className={`flex items-center gap-1 transition-opacity duration-150 ml-2 ${
+									index === selectedIndex 
+										? "opacity-100" 
+										: "opacity-0 group-hover:opacity-100"
+								}`}>
 									<button
-										type="button" // Add explicit type prop for button element
-										onClick={(e) => handleDeleteItem(e, item.id)}
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											handleItemClick(item);
+										}}
 										className={`
-                      p-1 rounded hover:bg-opacity-20 transition-colors
+                      p-1.5 rounded transition-colors
                       ${
 												index === selectedIndex
-													? "hover:bg-white text-white opacity-80 hover:opacity-100"
-													: "text-gray-400 hover:text-red-400 hover:bg-red-500"
+													? "hover:bg-blue-500 text-white"
+													: "hover:bg-gray-600 text-gray-400 hover:text-white"
+											}
+                    `}
+										title="Copy to clipboard"
+										aria-label="Copy to clipboard"
+									>
+										<Copy className="w-4 h-4" />
+									</button>
+									<button
+										type="button"
+										onClick={(e) => handleDeleteItem(e, item.id)}
+										className={`
+                      p-1.5 rounded transition-colors
+                      ${
+												index === selectedIndex
+													? "hover:bg-blue-500 text-white"
+													: "hover:bg-red-600 text-gray-400 hover:text-white"
 											}
                     `}
 										title="Delete item"
+										aria-label="Delete this clipboard item"
 									>
 										<Trash2 className="w-4 h-4" />
 									</button>
