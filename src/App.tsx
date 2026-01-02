@@ -1,11 +1,13 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { register, unregisterAll } from "@tauri-apps/plugin-global-shortcut";
 import { format } from "date-fns";
 import { Copy, Search, Trash, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type HistoryItem, useClipboard } from "./hooks/useClipboard";
-import { clearAllHistory, deleteHistoryItem, searchHistory } from "./lib/db";
+import { useClipboard } from "./hooks/useClipboard";
+import {
+	clearAllHistory,
+	deleteHistoryItem,
+	type HistoryItem,
+	searchHistory,
+} from "./lib/db";
 
 function App() {
 	const { history, refreshHistory } = useClipboard();
@@ -22,75 +24,29 @@ function App() {
 		setIsVisible(false);
 	}, []);
 
-	// Function to position window at cursor
-	// Note: True cursor positioning requires native macOS APIs
-	// For now, we center the window which works well for most use cases
-	const positionWindowAtCursor = useCallback(async () => {
-		try {
-			const appWindow = getCurrentWindow();
-			// Center the window on the current monitor
-			await appWindow.center();
-		} catch (error) {
-			console.error("Failed to position window:", error);
-		}
-	}, []);
-
-	// Register global shortcut Cmd+Shift+V
+	// Global shortcut is handled in Electron main process
+	// Listen for window visibility changes to sync state
 	useEffect(() => {
-		const registerShortcut = async () => {
-			// Wait for Tauri to be available
-			if (typeof window === "undefined" || !window.__TAURI__) {
-				// Retry after a short delay if Tauri isn't ready yet
-				setTimeout(registerShortcut, 100);
-				return;
-			}
-
-			try {
-				await register("CommandOrControl+Shift+V", async () => {
-					const appWindow = getCurrentWindow();
-					const visible = await appWindow.isVisible();
-					if (visible) {
-						await appWindow.hide();
-						setIsVisible(false);
-					} else {
-						await positionWindowAtCursor();
-						await appWindow.show();
-						await appWindow.setFocus();
-						setIsVisible(true);
-						// Focus search input when showing
-						setTimeout(() => {
-							searchInputRef.current?.focus();
-						}, 100);
-					}
-				});
-			} catch (error) {
-				// Only log errors that aren't about Tauri not being available
-				if (
-					error instanceof Error &&
-					error.message.includes("transformCallback")
-				) {
-					// Tauri API not ready yet, retry
-					setTimeout(registerShortcut, 100);
-					return;
+		const checkVisibility = async () => {
+			if (window.electronAPI) {
+				const visible = await window.electronAPI.window.isVisible();
+				setIsVisible(visible);
+				if (visible) {
+					// Focus search input when showing
+					setTimeout(() => {
+						searchInputRef.current?.focus();
+					}, 100);
 				}
-				console.error("Failed to register global shortcut:", error);
-				setError("Failed to register keyboard shortcut");
 			}
 		};
 
-		registerShortcut();
+		// Check visibility periodically
+		const interval = setInterval(checkVisibility, 100);
 
 		return () => {
-			// Only unregister if Tauri is available
-			if (typeof window !== "undefined" && window.__TAURI__) {
-				try {
-					unregisterAll();
-				} catch {
-					// Ignore errors during cleanup
-				}
-			}
+			clearInterval(interval);
 		};
-	}, [positionWindowAtCursor]);
+	}, []);
 
 	// Search functionality
 	useEffect(() => {
@@ -121,11 +77,11 @@ function App() {
 		async (e: KeyboardEvent) => {
 			if (!isVisible) return;
 
-			const appWindow = getCurrentWindow();
-
 			// Escape: Hide window
 			if (e.key === "Escape") {
-				await appWindow.hide();
+				if (window.electronAPI) {
+					await window.electronAPI.window.hide();
+				}
 				setIsVisible(false);
 				setSearchQuery("");
 				setSelectedIndex(0);
@@ -135,9 +91,9 @@ function App() {
 			// Enter: Copy selected item and hide
 			if (e.key === "Enter" && filteredHistory.length > 0) {
 				const selectedItem = filteredHistory[selectedIndex];
-				if (selectedItem) {
-					await writeText(selectedItem.content);
-					await appWindow.hide();
+				if (selectedItem && window.electronAPI) {
+					await window.electronAPI.clipboard.writeText(selectedItem.content);
+					await window.electronAPI.window.hide();
 					setIsVisible(false);
 					setSearchQuery("");
 					setSelectedIndex(0);
@@ -228,14 +184,15 @@ function App() {
 	const handleItemClick = async (item: HistoryItem) => {
 		try {
 			setError(null);
-			await retryOperation(async () => {
-				await writeText(item.content);
-			});
-			const appWindow = getCurrentWindow();
-			await appWindow.hide();
-			setIsVisible(false);
-			setSearchQuery("");
-			setSelectedIndex(0);
+			if (window.electronAPI) {
+				await retryOperation(async () => {
+					await window.electronAPI.clipboard.writeText(item.content);
+				});
+				await window.electronAPI.window.hide();
+				setIsVisible(false);
+				setSearchQuery("");
+				setSelectedIndex(0);
+			}
 		} catch (error) {
 			setError(
 				`Failed to copy to clipboard: ${
@@ -404,13 +361,15 @@ function App() {
 										{formatDate(item.created_at)}
 									</span>
 								</div>
-								
+
 								{/* Hover-reveal action buttons */}
-								<div className={`flex items-center gap-1 transition-opacity duration-150 ml-2 ${
-									index === selectedIndex 
-										? "opacity-100" 
-										: "opacity-0 group-hover:opacity-100"
-								}`}>
+								<div
+									className={`flex items-center gap-1 transition-opacity duration-150 ml-2 ${
+										index === selectedIndex
+											? "opacity-100"
+											: "opacity-0 group-hover:opacity-100"
+									}`}
+								>
 									<button
 										type="button"
 										onClick={(e) => {

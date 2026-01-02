@@ -1,10 +1,38 @@
 /// <reference types="vite/client" />
 
+interface ElectronAPI {
+	clipboard: {
+		readText: () => Promise<string>;
+		writeText: (text: string) => Promise<void>;
+	};
+	db: {
+		getHistory: (limit?: number) => Promise<Array<{
+			id: number;
+			content: string;
+			type: string;
+			created_at: string;
+		}>>;
+		addClip: (text: string) => Promise<void>;
+		searchHistory: (query: string, limit?: number) => Promise<Array<{
+			id: number;
+			content: string;
+			type: string;
+			created_at: string;
+		}>>;
+		deleteHistoryItem: (id: number) => Promise<void>;
+		clearAllHistory: () => Promise<void>;
+	};
+	window: {
+		center: () => Promise<void>;
+		show: () => Promise<void>;
+		hide: () => Promise<void>;
+		isVisible: () => Promise<boolean>;
+	};
+}
+
 declare global {
 	interface Window {
-		__TAURI__?: {
-			[key: string]: unknown;
-		};
+		electronAPI: ElectronAPI;
 	}
 }
 
