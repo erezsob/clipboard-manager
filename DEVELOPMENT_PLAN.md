@@ -17,6 +17,7 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Window starts hidden
 
 ### 🔨 Needs Implementation
+- Settings menu (cog icon) in bottom right with Quit and Clear All options
 - System tray icon with menu
 - Favorites/star feature
 - Individual item deletion
@@ -26,6 +27,7 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Window positioning at cursor
 - Error handling with retry logic
 - Settings/preferences
+- Automated testing suite (unit, integration, component, E2E)
 
 ---
 
@@ -42,11 +44,10 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 ### 2.2 System Tray Integration
 - **Tray Icon**: Always visible in menu bar
 - **Tray Menu**:
-  - Click icon → Open manager window at cursor position
-  - Show recent items (optional submenu with last 5-10 items)
+  - Open → Open manager window at cursor position
   - Quit
 - **Window Behavior**:
-  - Opens at cursor position when triggered from tray
+  - Opens at original position when triggered from tray
   - Background monitoring continues when window is hidden
 
 ### 2.3 Favorites System
@@ -57,11 +58,11 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 
 ### 2.4 Item Management
 - **Delete Individual Items**:
-  - Trash icon next to each item
+  - Trash icon next to each item on hover
   - Immediate removal on click
   - No confirmation (personal use)
 - **Clear All History**:
-  - Button in settings/header
+  - Moved to settings menu dropdown
   - Confirmation dialog (destructive action)
 
 ### 2.5 Search & Filtering
@@ -73,6 +74,40 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Clipboard access errors: Display error message in window
 - Retry logic: Automatic retry with exponential backoff
 - User feedback: Clear error messages
+
+### 2.7 Persisted Snippets Management
+- **Snippets Storage**: Separate table for user-created snippets (distinct from clipboard history)
+- **Snippet Creation**: 
+  - Create new snippet from text input or selected history item
+  - Add title/name and optional tags/categories
+  - Store permanently until explicitly deleted
+- **Snippet Management**:
+  - View all snippets in dedicated section or filtered view
+  - Edit snippet content, title, and tags
+  - Delete snippets individually
+  - Quick copy to clipboard
+- **Snippet Organization**:
+  - Optional tags/categories for grouping
+  - Search snippets by content, title, or tags
+  - Sort by name, date created, or last used
+- **UI Integration**:
+  - Toggle between "History" and "Snippets" views
+  - Create snippet button/action
+  - Snippet list with edit/delete actions
+  - Quick access from main window
+
+### 2.8 Settings Menu
+- **Location**: Bottom right corner of window
+- **Icon**: Settings cog icon (⚙️)
+- **Behavior**: Click to open dropdown menu
+- **Menu Items**:
+  - Clear All (with confirmation dialog)
+  - Quit (closes application)
+- **UI Details**:
+  - Menu appears as dropdown below/above icon
+  - Closes on item selection or click outside
+  - Styled to match dark theme
+- **Removed**: Clear All button from top bar (moved to settings menu)
 
 ---
 
@@ -99,8 +134,13 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 │ ...                             │
 │ [Load More Button]              │
 ├─────────────────────────────────┤
-│ [Clear All] [Settings]          │
+│                          [⚙️]   │
 └─────────────────────────────────┘
+     Settings Menu (bottom right)
+     ┌─────────────┐
+     │ Clear All   │
+     │ Quit        │
+     └─────────────┘
 ```
 
 ### 3.4 Interaction Patterns
@@ -108,6 +148,9 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Click star → Toggle favorite
 - Click trash → Delete item immediately
 - Click "Load More" → Fetch next 100 items
+- Click settings cog → Open dropdown menu
+- Click "Clear All" in menu → Show confirmation, then clear all history
+- Click "Quit" in menu → Close application
 - Keyboard shortcuts remain (Arrow keys, Enter, Escape)
 
 ---
@@ -124,11 +167,25 @@ CREATE TABLE history (
 );
 ```
 
-### Required Migration
+### Required Migrations
 ```sql
 -- Migration 002: Add favorites support
 ALTER TABLE history ADD COLUMN is_favorite INTEGER DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_is_favorite ON history(is_favorite);
+
+-- Migration 003: Create snippets table
+CREATE TABLE snippets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    tags TEXT, -- JSON array or comma-separated
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_snippets_title ON snippets(title);
+CREATE INDEX IF NOT EXISTS idx_snippets_tags ON snippets(tags);
+CREATE INDEX IF NOT EXISTS idx_snippets_last_used ON snippets(last_used_at);
 ```
 
 ---
@@ -171,16 +228,97 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - Implement exponential backoff retry (3 attempts: 1s, 2s, 4s)
 - Display user-friendly error messages
 
+### 5.7 TanStack Query Integration
+- Replace manual state management with TanStack Query (React Query)
+- Benefits:
+  - Automatic caching and background refetching
+  - Optimistic updates for better UX
+  - Built-in loading and error states
+  - Query invalidation and refetching
+  - Reduced boilerplate code
+- Implementation:
+  - Wrap app with `QueryClientProvider`
+  - Convert `getHistory()`, `searchHistory()` to `useQuery` hooks
+  - Convert mutations (`addClip`, `deleteHistoryItem`, etc.) to `useMutation` hooks
+  - Implement query keys for proper cache management
+  - Add optimistic updates for delete/favorite operations
+  - Configure stale time and cache time appropriately
+
+### 5.8 Snippets Management Implementation
+- **Database Operations**:
+  - `createSnippet(title, content, tags?)`: Insert new snippet
+  - `getSnippets(filters?)`: Fetch all or filtered snippets
+  - `updateSnippet(id, title?, content?, tags?)`: Update snippet
+  - `deleteSnippet(id)`: Remove snippet
+  - `searchSnippets(query)`: Search by content, title, or tags
+- **UI Components**:
+  - Snippet list view with title, preview, and actions
+  - Snippet editor/form (create/edit)
+  - Tag input component
+  - View toggle between History and Snippets
+- **Integration**:
+  - "Save as Snippet" action on history items
+  - Quick copy from snippets list
+  - Update `last_used_at` when snippet is copied
+
+### 5.9 Automated Testing Suite
+- **Testing Framework**: Vitest (unit/integration) + React Testing Library (components) + Playwright (E2E)
+- **Unit Tests**:
+  - Database functions (`addClip`, `getHistory`, `searchHistory`, `deleteHistoryItem`, etc.)
+  - Utility functions (whitespace normalization, duplicate detection)
+  - Data transformation and validation logic
+- **Integration Tests**:
+  - Database operations with test database
+  - Clipboard operations with mocked Electron API
+  - TanStack Query hooks and mutations
+  - Error handling and retry logic
+- **Component Tests**:
+  - React components with React Testing Library
+  - User interactions (clicks, keyboard navigation)
+  - State management and side effects
+  - Accessibility checks
+- **E2E Tests**:
+  - Full application flow (open window, copy item, search, delete)
+  - Keyboard shortcuts functionality
+  - System tray interactions
+  - Window positioning and visibility
+- **Test Infrastructure**:
+  - Test database setup/teardown
+  - Mock Electron APIs and clipboard access
+  - Test utilities and helpers
+  - Coverage reporting (aim for 80%+ coverage)
+  - CI/CD integration for automated test runs
+
+### 5.10 Settings Menu Implementation
+- **Component**: Settings dropdown menu with cog icon
+- **Positioning**: Fixed position in bottom right corner
+- **State Management**: 
+  - Track menu open/closed state
+  - Handle click outside to close
+  - Handle menu item clicks
+- **Menu Items**:
+  - Clear All: Triggers confirmation dialog, then calls `clearAllHistory()`
+  - Quit: Calls Electron API to close application (`app.quit()`)
+- **Styling**: 
+  - Dark theme matching
+  - Dropdown animation (optional, future enhancement)
+  - Hover states for menu items
+- **Accessibility**: 
+  - Keyboard navigation support
+  - ARIA labels for screen readers
+
 ---
 
 ## 6. Implementation Phases
 
 ### Phase 1: Core Enhancements (Priority: High)
-1. ✅ System tray icon and menu
-2. ✅ Window positioning at cursor
-3. ✅ Individual item deletion (trash icon)
-4. ✅ Clear all history functionality
-5. ✅ Error handling with retry logic
+1. 🔨 Settings menu (cog icon) in bottom right with dropdown (Quit, Clear All)
+2. 🔨 Remove Clear All button from top bar
+3. ✅ System tray icon and menu
+4. ✅ Window positioning at cursor
+5. ✅ Individual item deletion (trash icon)
+6. ✅ Clear all history functionality
+7. ✅ Error handling with retry logic
 
 ### Phase 2: Favorites System (Priority: High)
 1. ✅ Database migration for `is_favorite` column
@@ -200,6 +338,57 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 2. ✅ Clear all history confirmation
 3. ✅ UI refinements
 4. ✅ Error message styling
+
+### Phase 5: TanStack Query Integration (Priority: Medium)
+1. 🔨 Install and configure `@tanstack/react-query`
+2. 🔨 Set up `QueryClientProvider` in app root
+3. 🔨 Convert history fetching to `useQuery` hooks
+4. 🔨 Convert mutations to `useMutation` hooks (add, delete, favorite, clear)
+5. 🔨 Implement query key factory for consistent cache management
+6. 🔨 Add optimistic updates for delete and favorite operations
+7. 🔨 Configure cache and stale time settings
+8. 🔨 Remove manual state management from `useClipboard` hook
+9. 🔨 Add automatic refetching on window focus
+10. 🔨 Test cache invalidation and refetching behavior
+
+### Phase 6: Persisted Snippets Management (Priority: Medium)
+1. 🔨 Database migration: Create `snippets` table with indexes
+2. 🔨 Implement database functions: create, read, update, delete, search snippets
+3. 🔨 Create snippet data access layer in `src/lib/db.ts`
+4. 🔨 Build snippet UI components:
+   - Snippet list view
+   - Snippet editor/form (create/edit)
+   - Tag input component
+   - View toggle component
+5. 🔨 Integrate TanStack Query for snippet operations
+6. 🔨 Add "Save as Snippet" action to history items
+7. 🔨 Implement snippet search and filtering
+8. 🔨 Add snippet management actions (edit, delete, copy)
+9. 🔨 Update UI layout to support History/Snippets toggle
+10. 🔨 Test snippet persistence and retrieval
+
+### Phase 7: Automated Testing Suite (Priority: High)
+1. 🔨 Install testing dependencies: Vitest, React Testing Library, Playwright, MSW
+2. 🔨 Configure Vitest with TypeScript and React support
+3. 🔨 Set up test database utilities (create, seed, cleanup)
+4. 🔨 Create Electron API mocks for clipboard and database operations
+5. 🔨 Write unit tests for database functions (`db.ts`)
+6. 🔨 Write unit tests for utility functions (whitespace normalization, duplicate detection)
+7. 🔨 Write integration tests for database operations with test database
+8. 🔨 Write component tests for React components (history list, search, favorites)
+9. 🔨 Write tests for TanStack Query hooks and mutations
+10. 🔨 Set up Playwright for E2E testing
+11. 🔨 Write E2E tests for core user flows:
+    - Open window, view history, copy item
+    - Search functionality
+    - Delete item, clear all
+    - Favorites toggle and filter
+    - Keyboard navigation
+12. 🔨 Configure test coverage reporting (vitest --coverage)
+13. 🔨 Add test scripts to package.json (`test`, `test:watch`, `test:coverage`, `test:e2e`)
+14. 🔨 Set up CI/CD pipeline for automated test runs (GitHub Actions)
+15. 🔨 Establish test coverage goals (80%+ for critical paths)
+16. 🔨 Document testing patterns and best practices
 
 ---
 
@@ -223,6 +412,8 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - 🔮 Window animations
 - 🔮 Private mode (don't save certain items)
 - 🔮 Accessibility improvements
+- 🔮 Snippet templates/variables
+- 🔮 Snippet folders/categories UI
 
 ### Low Priority (Future)
 - 🔮 Light mode theme
@@ -238,6 +429,8 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - **Frontend**: React + TypeScript + Tailwind CSS v4
 - **Backend**: Rust (Tauri v2)
 - **Database**: SQLite (via `tauri-plugin-sql`)
+- **State Management**: TanStack Query (React Query) - Phase 5
+- **Testing**: Vitest + React Testing Library + Playwright - Phase 7
 - **Plugins**:
   - `@tauri-apps/plugin-clipboard-manager`
   - `@tauri-apps/plugin-global-shortcut`
@@ -252,6 +445,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ## 9. Success Criteria
 
 ### Must Have (MVP)
+- 🔨 Settings menu in bottom right (Quit, Clear All)
 - ✅ System tray icon with click-to-open
 - ✅ Window appears at cursor position
 - ✅ Delete individual items
@@ -265,6 +459,9 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - 🔮 Smooth animations
 - 🔮 Settings window
 - 🔮 Enhanced error messages
+- 🔮 TanStack Query integration for better data management
+- 🔮 Persisted snippets for frequently used text
+- 🔮 Comprehensive automated test suite (80%+ coverage)
 
 ---
 
@@ -287,6 +484,10 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - Background monitoring continues when hidden
 - Window positioning uses cursor coordinates
 - Retry logic uses exponential backoff
+- TanStack Query provides better data fetching patterns and caching
+- Snippets are separate from history for better organization
+- Testing strategy: Unit tests for logic, integration tests for database, component tests for UI, E2E tests for critical flows
+- Test coverage target: 80%+ for critical paths (database operations, clipboard logic, core UI interactions)
 
 ---
 
@@ -299,7 +500,8 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024-12-19  
-**Status**: Ready for Implementation
+**Document Version**: 1.3  
+**Last Updated**: 2026-01-03  
+**Status**: Ready for Implementation  
+**Changes**: Added Phase 5 (TanStack Query Integration), Phase 6 (Persisted Snippets Management), Phase 7 (Automated Testing Suite), and high-priority Settings Menu feature (Phase 1)
 
