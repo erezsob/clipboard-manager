@@ -108,7 +108,26 @@ pnpm format
 
 # Check for unused code
 pnpm knip
+
+# Check TypeScript types
+pnpm type-check
 ```
+
+### Git Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) to manage Git hooks. A pre-push hook is configured to automatically run code quality checks before pushing to the remote repository.
+
+**Pre-Push Hook Checks:**
+- **Linting**: Runs Biome linter to check for code quality issues
+- **Type Checking**: Validates TypeScript types (`tsc --noEmit`)
+- **Unused Code Detection**: Runs Knip to identify unused code and dependencies
+
+The hook will prevent pushing if any of these checks fail. To bypass the hook in emergency situations, use:
+```bash
+git push --no-verify
+```
+
+**Note**: It's recommended to fix any issues rather than bypassing the hook, as these checks help maintain code quality and prevent broken code from being pushed.
 
 ## Project Structure
 

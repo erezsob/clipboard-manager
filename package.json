@@ -14,7 +14,9 @@
 		"lint": "biome lint",
 		"lint:fix": "biome lint --fix",
 		"format": "biome format --write",
-		"knip": "knip"
+		"types:check": "tsc --noEmit",
+		"knip": "knip",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"better-sqlite3": "^12.5.0",
@@ -35,6 +37,7 @@
 		"concurrently": "^9.1.2",
 		"electron": "^39.2.7",
 		"electron-builder": "^25.1.8",
+		"husky": "^9.1.7",
 		"knip": "^5.79.0",
 		"postcss": "^8.5.6",
 		"tailwindcss": "^4.1.18",
