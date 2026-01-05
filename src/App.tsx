@@ -256,7 +256,7 @@ function App() {
 	// Truncate text for display
 	const truncateText = (text: string, maxLength: number = 100) => {
 		if (text.length <= maxLength) return text;
-		return text.substring(0, maxLength) + "...";
+		return `${text.substring(0, maxLength)}...`;
 	};
 
 	return (

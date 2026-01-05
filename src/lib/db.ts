@@ -14,7 +14,7 @@ async function waitFor(condition: () => boolean, maxAttempts = 50) {
 		attempts++;
 		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
-	throw new Error('Condition not met after waiting');
+	throw new Error("Condition not met after waiting");
 }
 
 async function waitForElectronAPI() {
@@ -29,8 +29,6 @@ export async function addClip(text: string) {
 	window.electronAPI.db.addClip(text);
 }
 
-
-
 /**
  * Get the last 50 history items
  */
@@ -42,10 +40,7 @@ export async function getHistory(limit: number = 50) {
 /**
  * Search history by content
  */
-export async function searchHistory(
-	query: string,
-	limit: number = 50,
-) {
+export async function searchHistory(query: string, limit: number = 50) {
 	await waitForElectronAPI();
 	return window.electronAPI.db.searchHistory(query, limit);
 }

@@ -1,3 +1,6 @@
+// biome-ignore lint/correctness/noUnusedImports: Added React to avoid empty export
+import React from "react";
+
 /// <reference types="vite/client" />
 
 interface ElectronAPI {
@@ -6,19 +9,26 @@ interface ElectronAPI {
 		writeText: (text: string) => Promise<void>;
 	};
 	db: {
-		getHistory: (limit?: number) => Promise<Array<{
-			id: number;
-			content: string;
-			type: string;
-			created_at: string;
-		}>>;
+		getHistory: (limit?: number) => Promise<
+			Array<{
+				id: number;
+				content: string;
+				type: string;
+				created_at: string;
+			}>
+		>;
 		addClip: (text: string) => Promise<void>;
-		searchHistory: (query: string, limit?: number) => Promise<Array<{
-			id: number;
-			content: string;
-			type: string;
-			created_at: string;
-		}>>;
+		searchHistory: (
+			query: string,
+			limit?: number,
+		) => Promise<
+			Array<{
+				id: number;
+				content: string;
+				type: string;
+				created_at: string;
+			}>
+		>;
 		deleteHistoryItem: (id: number) => Promise<void>;
 		clearAllHistory: () => Promise<void>;
 	};
@@ -35,5 +45,3 @@ declare global {
 		electronAPI: ElectronAPI;
 	}
 }
-
-export {};
