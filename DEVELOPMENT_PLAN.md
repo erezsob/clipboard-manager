@@ -361,30 +361,30 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### Phase 1: Core Enhancements (Priority: High)
 1. 🔨 Settings menu (cog icon) in bottom right with dropdown (Quit, Clear All)
 2. 🔨 Remove Clear All button from top bar
-3. ✅ System tray icon and menu
-4. ✅ Window positioning at cursor
-5. ✅ Individual item deletion (trash icon)
-6. ✅ Clear all history functionality
-7. ✅ Error handling with retry logic
+3. 🔨 System tray icon and menu
+4. 🔨 Window positioning at cursor
+5. 🔨 Individual item deletion (trash icon)
+6. 🔨 Clear all history functionality
+7. 🔨 Error handling with retry logic
 
 ### Phase 2: Favorites System (Priority: High)
-1. ✅ Database migration for `is_favorite` column
-2. ✅ Star icon UI component
-3. ✅ Toggle favorite functionality
-4. ✅ Favorites filter toggle
-5. ✅ Update queries to support favorites
+1. 🔨 Database migration for `is_favorite` column
+2. 🔨 Star icon UI component
+3. 🔨 Toggle favorite functionality
+4. 🔨 Favorites filter toggle
+5. 🔨 Update queries to support favorites
 
 ### Phase 3: Pagination & Performance (Priority: Medium)
-1. ✅ Update `getHistory()` to support pagination
-2. ✅ "Load More" button UI
-3. ✅ State management for loaded items
-4. ✅ Near-duplicate detection (whitespace normalization)
+1. 🔨 Update `getHistory()` to support pagination
+2. 🔨 "Load More" button UI
+3. 🔨 State management for loaded items
+4. 🔨 Near-duplicate detection (whitespace normalization)
 
 ### Phase 4: Polish & Settings (Priority: Medium)
-1. ✅ Settings/preferences window
-2. ✅ Clear all history confirmation
-3. ✅ UI refinements
-4. ✅ Error message styling
+1. 🔨 Settings/preferences window
+2. 🔨 Clear all history confirmation
+3. 🔨 UI refinements
+4. 🔨 Error message styling
 
 ### Phase 5: TanStack Query Integration (Priority: Medium)
 1. 🔨 Install and configure `@tanstack/react-query`
