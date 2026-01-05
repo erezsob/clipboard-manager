@@ -25,7 +25,6 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Load more functionality (pagination)
 - Clear all history
 - Near-duplicate detection (whitespace normalization)
-- Window positioning at cursor
 - Error handling with retry logic
 - Settings/preferences
 - Automated testing suite (unit, integration, component, E2E)
@@ -45,10 +44,10 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 ### 2.2 System Tray Integration
 - **Tray Icon**: Always visible in menu bar
 - **Tray Menu**:
-  - Open → Open manager window at cursor position
+  - Open → Open manager window
   - Quit
 - **Window Behavior**:
-  - Opens at original position when triggered from tray
+  - Opens when triggered from tray
   - Background monitoring continues when window is hidden
 
 ### 2.3 Favorites System
@@ -115,7 +114,6 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 ## 3. UI/UX Specifications
 
 ### 3.1 Window Behavior
-- **Position**: Appear at cursor when opened from tray
 - **Size**: 450x600 (current)
 - **Style**: Frameless, transparent, rounded corners
 - **Visibility**: Starts hidden, toggles via shortcut or tray
@@ -217,19 +215,14 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### 5.4 System Tray (Rust)
 - Use `tauri-plugin-system-tray` or native macOS APIs
 - Create tray icon with menu
-- Handle click events to show window at cursor
+- Handle click events to show window
 
-### 5.5 Window Positioning
-- Get cursor position via Tauri API
-- Calculate window position (center on cursor or offset)
-- Apply position before showing window
-
-### 5.6 Error Handling & Retry
+### 5.5 Error Handling & Retry
 - Wrap clipboard operations in try-catch
 - Implement exponential backoff retry (3 attempts: 1s, 2s, 4s)
 - Display user-friendly error messages
 
-### 5.7 TanStack Query Integration
+### 5.6 TanStack Query Integration
 - Replace manual state management with TanStack Query (React Query)
 - Benefits:
   - Automatic caching and background refetching
@@ -245,7 +238,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Add optimistic updates for delete/favorite operations
   - Configure stale time and cache time appropriately
 
-### 5.8 Snippets Management Implementation
+### 5.7 Snippets Management Implementation
 - **Database Operations**:
   - `createSnippet(title, content, tags?)`: Insert new snippet
   - `getSnippets(filters?)`: Fetch all or filtered snippets
@@ -262,7 +255,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Quick copy from snippets list
   - Update `last_used_at` when snippet is copied
 
-### 5.9 Automated Testing Suite
+### 5.8 Automated Testing Suite
 - **Testing Framework**: Vitest (unit/integration) + React Testing Library (components) + Playwright (E2E)
 - **Unit Tests**:
   - Database functions (`addClip`, `getHistory`, `searchHistory`, `deleteHistoryItem`, etc.)
@@ -282,7 +275,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Full application flow (open window, copy item, search, delete)
   - Keyboard shortcuts functionality
   - System tray interactions
-  - Window positioning and visibility
+  - Window visibility
 - **Test Infrastructure**:
   - Test database setup/teardown
   - Mock Electron APIs and clipboard access
@@ -290,7 +283,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Coverage reporting (aim for 80%+ coverage)
   - CI/CD integration for automated test runs
 
-### 5.10 Settings Menu Implementation
+### 5.9 Settings Menu Implementation
 - **Component**: Settings dropdown menu with cog icon
 - **Positioning**: Fixed position in bottom right corner
 - **State Management**: 
@@ -308,7 +301,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Keyboard navigation support
   - ARIA labels for screen readers
 
-### 5.11 Pre-Push Git Hook Implementation
+### 5.10 Pre-Push Git Hook Implementation
 - **Purpose**: Enforce code quality checks before code is pushed to remote repository
 - **Hook Type**: Git pre-push hook (runs before `git push`)
 - **Implementation Tool**: Husky (primary method for hook management)
@@ -359,13 +352,12 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ## 6. Implementation Phases
 
 ### Phase 1: Core Enhancements (Priority: High)
-1. 🔨 Settings menu (cog icon) in bottom right with dropdown (Quit, Clear All)
-2. 🔨 Remove Clear All button from top bar
+1. ✅ Settings menu (cog icon) in bottom right with dropdown (Quit, Clear All)
+2. ✅ Remove Clear All button from top bar
 3. 🔨 System tray icon and menu
-4. 🔨 Window positioning at cursor
-5. 🔨 Individual item deletion (trash icon)
-6. 🔨 Clear all history functionality
-7. 🔨 Error handling with retry logic
+4. 🔨 Individual item deletion (trash icon)
+5. 🔨 Clear all history functionality
+6. 🔨 Error handling with retry logic
 
 ### Phase 2: Favorites System (Priority: High)
 1. 🔨 Database migration for `is_favorite` column
@@ -514,7 +506,6 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### Must Have (MVP)
 - 🔨 Settings menu in bottom right (Quit, Clear All)
 - ✅ System tray icon with click-to-open
-- ✅ Window appears at cursor position
 - ✅ Delete individual items
 - ✅ Favorites with filter
 - ✅ Load more pagination
@@ -549,7 +540,6 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### Technical Notes
 - SQLite sufficient for local storage
 - Background monitoring continues when hidden
-- Window positioning uses cursor coordinates
 - Retry logic uses exponential backoff
 - TanStack Query provides better data fetching patterns and caching
 - Snippets are separate from history for better organization
