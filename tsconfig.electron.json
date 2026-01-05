@@ -7,6 +7,7 @@
     "outDir": "./electron-dist",
     "rootDir": "./electron",
     "noEmit": false,
+    "allowImportingTsExtensions": false,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
