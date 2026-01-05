@@ -42,6 +42,45 @@ function createWindow(): void {
 	// Center window
 	mainWindow.center();
 
+	// Handle Escape key in main process
+	mainWindow.webContents.on("before-input-event", (event, input) => {
+		// Check both key and code for Escape
+		if (
+			(input.key === "Escape" || input.code === "Escape") &&
+			mainWindow &&
+			mainWindow.isVisible()
+		) {
+			mainWindow.hide();
+			event.preventDefault();
+		}
+	});
+
+	// Hide window when it loses focus (click outside)
+	let blurTimeout: NodeJS.Timeout | null = null;
+
+	mainWindow.on("blur", () => {
+		if (!mainWindow?.isVisible()) return;
+		// Clear any existing timeout
+		if (blurTimeout) {
+			clearTimeout(blurTimeout);
+		}
+		// Small delay to avoid hiding when interacting with window controls
+		blurTimeout = setTimeout(() => {
+			if (mainWindow?.isVisible() && !mainWindow.isFocused()) {
+				mainWindow.hide();
+			}
+			blurTimeout = null;
+		}, 50);
+	});
+
+	mainWindow.on("focus", () => {
+		// Cancel hide if window regains focus
+		if (blurTimeout) {
+			clearTimeout(blurTimeout);
+			blurTimeout = null;
+		}
+	});
+
 	mainWindow.on("closed", () => {
 		mainWindow = null;
 	});
