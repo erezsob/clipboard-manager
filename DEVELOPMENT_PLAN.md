@@ -15,6 +15,7 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Keyboard navigation (Arrow keys, Enter, Escape)
 - Dark mode UI
 - Window starts hidden
+- Pre-push git hook (linting, formatting, types, knip checks)
 
 ### 🔨 Needs Implementation
 - Settings menu (cog icon) in bottom right with Quit and Clear All options
@@ -28,7 +29,6 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Error handling with retry logic
 - Settings/preferences
 - Automated testing suite (unit, integration, component, E2E)
-- Pre-push git hook (linting, formatting, types, knip checks)
 
 ---
 
@@ -438,24 +438,24 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 16. 🔨 Document testing patterns and best practices
 
 ### Phase 8: Pre-Push Git Hook (Priority: Medium)
-1. 🔨 Install husky as dev dependency (`pnpm add -D husky`)
-2. 🔨 Initialize husky (`pnpm husky init`) to create `.husky` directory
-3. 🔨 Add `prepare` script to package.json: `"prepare": "husky install"` (auto-installs hooks after npm/pnpm install)
-4. 🔨 Verify all required scripts exist in package.json:
+1. ✅ Install husky as dev dependency (`pnpm add -D husky`)
+2. ✅ Initialize husky (`pnpm husky init`) to create `.husky` directory
+3. ✅ Add `prepare` script to package.json: `"prepare": "husky"` (auto-installs hooks after npm/pnpm install)
+4. ✅ Verify all required scripts exist in package.json:
    - `lint`: Biome linting check
    - `format`: Biome formatting check
-   - `type-check`: TypeScript type checking (`tsc --noEmit`)
+   - `types:check`: TypeScript type checking (`tsc --noEmit`)
    - `knip`: Knip unused code detection
-5. 🔨 Create `.husky/pre-push` script that runs all checks:
+5. ✅ Create `.husky/pre-push` script that runs all checks:
    - Biome linting (`biome check`)
    - Biome formatting (`biome format --check`)
    - TypeScript type checking (`tsc --noEmit`)
    - Knip check (`knip` or `knip --production`)
-6. 🔨 Configure hook to exit with error if any check fails
-7. 🔨 Make pre-push script executable (`chmod +x .husky/pre-push`)
-8. 🔨 Test hook behavior (should block push on failures, allow push on success)
-9. 🔨 Document hook behavior in README
-10. 🔨 Add note about `--no-verify` bypass option for emergencies
+6. ✅ Configure hook to exit with error if any check fails
+7. ✅ Make pre-push script executable (`chmod +x .husky/pre-push`)
+8. ✅ Test hook behavior (should block push on failures, allow push on success)
+9. ✅ Document hook behavior in README
+10. ✅ Add note about `--no-verify` bypass option for emergencies
 
 ---
 
@@ -567,8 +567,8 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 
 ---
 
-**Document Version**: 1.4  
+**Document Version**: 1.5  
 **Last Updated**: 2026-01-03  
 **Status**: Ready for Implementation  
-**Changes**: Added Phase 5 (TanStack Query Integration), Phase 6 (Persisted Snippets Management), Phase 7 (Automated Testing Suite), Phase 8 (Pre-Push Git Hook), and high-priority Settings Menu feature (Phase 1)
+**Changes**: Added Phase 5 (TanStack Query Integration), Phase 6 (Persisted Snippets Management), Phase 7 (Automated Testing Suite), Phase 8 (Pre-Push Git Hook), and high-priority Settings Menu feature (Phase 1). Phase 8 (Pre-Push Git Hook) completed.
 
