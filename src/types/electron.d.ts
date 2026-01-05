@@ -1,6 +1,3 @@
-// biome-ignore lint/correctness/noUnusedImports: Added React to avoid empty export
-import React from "react";
-
 /// <reference types="vite/client" />
 
 interface ElectronAPI {
@@ -43,8 +40,6 @@ interface ElectronAPI {
 	};
 }
 
-declare global {
-	interface Window {
-		electronAPI: ElectronAPI;
-	}
+interface Window {
+	electronAPI: ElectronAPI;
 }
