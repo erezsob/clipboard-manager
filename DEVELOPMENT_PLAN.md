@@ -28,6 +28,7 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Error handling with retry logic
 - Settings/preferences
 - Automated testing suite (unit, integration, component, E2E)
+- Pre-push git hook (linting, formatting, types, knip checks)
 
 ---
 
@@ -307,6 +308,52 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Keyboard navigation support
   - ARIA labels for screen readers
 
+### 5.11 Pre-Push Git Hook Implementation
+- **Purpose**: Enforce code quality checks before code is pushed to remote repository
+- **Hook Type**: Git pre-push hook (runs before `git push`)
+- **Implementation Tool**: Husky (primary method for hook management)
+- **Checks to Run**:
+  1. **Linting**: Run Biome linter (`biome check` or `biome lint`)
+  2. **Formatting**: Verify code is formatted (`biome format --check` or `biome check --write`)
+  3. **Type Checking**: Run TypeScript compiler (`tsc --noEmit`)
+  4. **Knip Check**: Run Knip to detect unused code (`knip` or `knip --production`)
+- **Implementation Steps**:
+  1. Install `husky` as a dev dependency
+  2. Initialize husky with `pnpm husky init` (creates `.husky` directory)
+  3. Create `.husky/pre-push` script that runs all checks in sequence
+  4. Configure script to exit with error code if any check fails (prevents push)
+  5. Display clear error messages indicating which check failed
+  6. Allow bypass with `--no-verify` flag (for emergency cases)
+- **Husky Pre-Push Script Structure**:
+  ```bash
+  #!/usr/bin/env sh
+  . "$(dirname -- "$0")/_/husky.sh"
+  
+  # Run linting
+  pnpm biome check || exit 1
+  # Run type checking
+  pnpm tsc --noEmit || exit 1
+  # Run Knip
+  pnpm knip || exit 1
+  ```
+- **Benefits of Using Husky**:
+  - Cross-platform support (Windows, macOS, Linux)
+  - Easy hook management via `.husky` directory
+  - Version-controlled hooks (committed to repository)
+  - Simple installation and setup
+  - Works seamlessly with pnpm/npm/yarn
+- **Additional Benefits**:
+  - Prevents broken code from being pushed
+  - Ensures consistent code style
+  - Catches type errors early
+  - Identifies unused code and dependencies
+  - Reduces CI/CD failures
+- **Configuration**:
+  - Ensure all required scripts exist in `package.json`
+  - Add `prepare` script to `package.json`: `"prepare": "husky install"` (runs after install)
+  - Document hook behavior in README
+  - Consider adding `lint-staged` for pre-commit checks (future enhancement)
+
 ---
 
 ## 6. Implementation Phases
@@ -389,6 +436,26 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 14. 🔨 Set up CI/CD pipeline for automated test runs (GitHub Actions)
 15. 🔨 Establish test coverage goals (80%+ for critical paths)
 16. 🔨 Document testing patterns and best practices
+
+### Phase 8: Pre-Push Git Hook (Priority: Medium)
+1. 🔨 Install husky as dev dependency (`pnpm add -D husky`)
+2. 🔨 Initialize husky (`pnpm husky init`) to create `.husky` directory
+3. 🔨 Add `prepare` script to package.json: `"prepare": "husky install"` (auto-installs hooks after npm/pnpm install)
+4. 🔨 Verify all required scripts exist in package.json:
+   - `lint`: Biome linting check
+   - `format`: Biome formatting check
+   - `type-check`: TypeScript type checking (`tsc --noEmit`)
+   - `knip`: Knip unused code detection
+5. 🔨 Create `.husky/pre-push` script that runs all checks:
+   - Biome linting (`biome check`)
+   - Biome formatting (`biome format --check`)
+   - TypeScript type checking (`tsc --noEmit`)
+   - Knip check (`knip` or `knip --production`)
+6. 🔨 Configure hook to exit with error if any check fails
+7. 🔨 Make pre-push script executable (`chmod +x .husky/pre-push`)
+8. 🔨 Test hook behavior (should block push on failures, allow push on success)
+9. 🔨 Document hook behavior in README
+10. 🔨 Add note about `--no-verify` bypass option for emergencies
 
 ---
 
@@ -500,8 +567,8 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 
 ---
 
-**Document Version**: 1.3  
+**Document Version**: 1.4  
 **Last Updated**: 2026-01-03  
 **Status**: Ready for Implementation  
-**Changes**: Added Phase 5 (TanStack Query Integration), Phase 6 (Persisted Snippets Management), Phase 7 (Automated Testing Suite), and high-priority Settings Menu feature (Phase 1)
+**Changes**: Added Phase 5 (TanStack Query Integration), Phase 6 (Persisted Snippets Management), Phase 7 (Automated Testing Suite), Phase 8 (Pre-Push Git Hook), and high-priority Settings Menu feature (Phase 1)
 
