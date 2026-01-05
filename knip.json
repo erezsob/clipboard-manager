@@ -5,5 +5,5 @@
 		"type": true
 	},
 	"tags": ["-lintignore"],
-	"ignore": ["src/vite-env.d.ts", "electron/preload.js"]
+	"ignore": ["src/vite-env.d.ts", "electron/preload.ts"]
 }

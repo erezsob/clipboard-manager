@@ -12,10 +12,10 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let mainWindow = null;
-let db = null;
+let mainWindow: BrowserWindow | null = null;
+let db: Database.Database | null = null;
 
-function createWindow() {
+function createWindow(): void {
 	mainWindow = new BrowserWindow({
 		width: 450,
 		height: 600,
@@ -47,7 +47,7 @@ function createWindow() {
 	});
 }
 
-function initDatabase() {
+function initDatabase(): void {
 	const dbPath = path.join(app.getPath("userData"), "clipboard.db");
 	db = new Database(dbPath);
 
@@ -109,24 +109,26 @@ ipcMain.handle("clipboard:readText", () => {
 	return clipboard.readText();
 });
 
-ipcMain.handle("clipboard:writeText", (_, text) => {
+ipcMain.handle("clipboard:writeText", (_event, text: string) => {
 	clipboard.writeText(text);
 });
 
-ipcMain.handle("db:getHistory", (_, limit = 50) => {
+ipcMain.handle("db:getHistory", (_event, limit: number = 50) => {
+	if (!db) throw new Error("Database not initialized");
 	const stmt = db.prepare(
 		"SELECT id, content, type, created_at FROM history ORDER BY created_at DESC LIMIT ?",
 	);
 	return stmt.all(limit);
 });
 
-ipcMain.handle("db:addClip", (_, text) => {
+ipcMain.handle("db:addClip", (_event, text: string) => {
+	if (!db) throw new Error("Database not initialized");
 	if (!text || text.trim().length === 0) return;
 
 	// Check for duplicate
 	const recent = db
 		.prepare("SELECT content FROM history ORDER BY created_at DESC LIMIT 1")
-		.get();
+		.get() as { content: string } | undefined;
 	if (recent && recent.content === text) {
 		return;
 	}
@@ -135,19 +137,25 @@ ipcMain.handle("db:addClip", (_, text) => {
 	stmt.run(text, "text");
 });
 
-ipcMain.handle("db:searchHistory", (_, query, limit = 50) => {
-	const stmt = db.prepare(
-		"SELECT id, content, type, created_at FROM history WHERE content LIKE ? ORDER BY created_at DESC LIMIT ?",
-	);
-	return stmt.all(`%${query}%`, limit);
-});
+ipcMain.handle(
+	"db:searchHistory",
+	(_event, query: string, limit: number = 50) => {
+		if (!db) throw new Error("Database not initialized");
+		const stmt = db.prepare(
+			"SELECT id, content, type, created_at FROM history WHERE content LIKE ? ORDER BY created_at DESC LIMIT ?",
+		);
+		return stmt.all(`%${query}%`, limit);
+	},
+);
 
-ipcMain.handle("db:deleteHistoryItem", (_, id) => {
+ipcMain.handle("db:deleteHistoryItem", (_event, id: number) => {
+	if (!db) throw new Error("Database not initialized");
 	const stmt = db.prepare("DELETE FROM history WHERE id = ?");
 	stmt.run(id);
 });
 
 ipcMain.handle("db:clearAllHistory", () => {
+	if (!db) throw new Error("Database not initialized");
 	db.prepare("DELETE FROM history").run();
 });
 

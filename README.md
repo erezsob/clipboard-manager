@@ -134,8 +134,8 @@ git push --no-verify
 ```
 mac-clipboard-manager/
 ├── electron/           # Electron main process files
-│   ├── main.js        # Main process entry point
-│   └── preload.js     # Preload script for secure IPC
+│   ├── main.ts        # Main process entry point (TypeScript)
+│   └── preload.ts     # Preload script for secure IPC (TypeScript)
 ├── src/               # React application source
 │   ├── App.tsx        # Main application component
 │   ├── hooks/         # React hooks
