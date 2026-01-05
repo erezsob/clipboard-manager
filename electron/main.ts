@@ -7,6 +7,9 @@ import {
 	clipboard,
 	globalShortcut,
 	ipcMain,
+	Menu,
+	nativeImage,
+	Tray,
 } from "electron";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +17,7 @@ const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
+let tray: Tray | null = null;
 
 function createWindow(): void {
 	mainWindow = new BrowserWindow({
@@ -106,9 +110,67 @@ function initDatabase(): void {
   `);
 }
 
+function createTray(): void {
+	// Create a simple programmatic icon for the tray
+	// On macOS, tray icons should be template images (black with transparency)
+	const iconSize = 16;
+
+	// Try to use the app icon as a fallback
+	try {
+		const appIcon = nativeImage.createFromNamedImage("NSApplicationIcon");
+		if (!appIcon.isEmpty()) {
+			tray = new Tray(appIcon.resize({ width: iconSize, height: iconSize }));
+		} else {
+			// Create a minimal icon using a 1x1 pixel image
+			// This will show as a small dot, but it's better than nothing
+			const buffer = Buffer.from(
+				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+				"base64",
+			);
+			const minimalIcon = nativeImage.createFromBuffer(buffer);
+			tray = new Tray(minimalIcon);
+		}
+	} catch {
+		// Ultimate fallback: create from a tiny buffer
+		const buffer = Buffer.from(
+			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+			"base64",
+		);
+		const minimalIcon = nativeImage.createFromBuffer(buffer);
+		tray = new Tray(minimalIcon);
+	}
+
+	// Create context menu
+	const contextMenu = Menu.buildFromTemplate([
+		{
+			label: "Open",
+			click: () => {
+				if (mainWindow) {
+					mainWindow.center();
+					mainWindow.show();
+					mainWindow.focus();
+				}
+			},
+		},
+		{
+			type: "separator",
+		},
+		{
+			label: "Quit",
+			click: () => {
+				app.quit();
+			},
+		},
+	]);
+
+	tray.setContextMenu(contextMenu);
+	tray.setToolTip("Clipboard Manager");
+}
+
 app.whenReady().then(() => {
 	initDatabase();
 	createWindow();
+	createTray();
 
 	// Register global shortcut Cmd+Shift+V
 	globalShortcut.register("CommandOrControl+Shift+V", () => {
@@ -131,6 +193,8 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
+	// On macOS, keep the app running even when all windows are closed
+	// The tray icon keeps the app alive
 	if (process.platform !== "darwin") {
 		app.quit();
 	}

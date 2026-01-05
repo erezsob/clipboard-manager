@@ -354,10 +354,10 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### Phase 1: Core Enhancements (Priority: High)
 1. ✅ Settings menu (cog icon) in bottom right with dropdown (Quit, Clear All)
 2. ✅ Remove Clear All button from top bar
-3. 🔨 System tray icon and menu
-4. 🔨 Individual item deletion (trash icon)
-5. 🔨 Clear all history functionality
-6. 🔨 Error handling with retry logic
+3. ✅ System tray icon and menu
+4. ✅ Individual item deletion (trash icon)
+5. ✅ Clear all history functionality
+6. ✅ Error handling with retry logic
 
 ### Phase 2: Favorites System (Priority: High)
 1. 🔨 Database migration for `is_favorite` column
