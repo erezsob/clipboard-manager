@@ -176,3 +176,7 @@ ipcMain.handle("window:isVisible", () => {
 	}
 	return false;
 });
+
+ipcMain.handle("app:quit", () => {
+	app.quit();
+});

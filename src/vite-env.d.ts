@@ -38,6 +38,9 @@ interface ElectronAPI {
 		hide: () => Promise<void>;
 		isVisible: () => Promise<boolean>;
 	};
+	app: {
+		quit: () => Promise<void>;
+	};
 }
 
 declare global {

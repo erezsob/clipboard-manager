@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		hide: () => ipcRenderer.invoke("window:hide"),
 		isVisible: () => ipcRenderer.invoke("window:isVisible"),
 	},
+	app: {
+		quit: () => ipcRenderer.invoke("app:quit"),
+	},
 });

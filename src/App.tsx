@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Copy, Search, Trash, Trash2, X } from "lucide-react";
+import { Copy, Search, Settings, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useClipboard } from "./hooks/useClipboard";
 import {
@@ -16,7 +16,9 @@ function App() {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [isVisible, setIsVisible] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
+	const settingsMenuRef = useRef<HTMLDivElement>(null);
 
 	// Initialize window visibility
 	useEffect(() => {
@@ -142,6 +144,26 @@ function App() {
 		};
 	}, [handleKeyDown]);
 
+	// Close settings menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				settingsMenuRef.current &&
+				!settingsMenuRef.current.contains(event.target as Node)
+			) {
+				setIsSettingsMenuOpen(false);
+			}
+		};
+
+		if (isSettingsMenuOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isSettingsMenuOpen]);
+
 	// Format date for display
 	const formatDate = (dateString: string) => {
 		try {
@@ -232,6 +254,7 @@ function App() {
 
 	// Handle clear all history
 	const handleClearAll = async () => {
+		setIsSettingsMenuOpen(false);
 		if (
 			window.confirm(
 				"Are you sure you want to clear all clipboard history? This action cannot be undone.",
@@ -250,6 +273,14 @@ function App() {
 					}`,
 				);
 			}
+		}
+	};
+
+	// Handle quit
+	const handleQuit = async () => {
+		setIsSettingsMenuOpen(false);
+		if (window.electronAPI) {
+			await window.electronAPI.app.quit();
 		}
 	};
 
@@ -298,15 +329,6 @@ function App() {
 							</button>
 						)}
 					</div>
-					<button
-						type="button" // Add explicit type prop for button element
-						onClick={handleClearAll}
-						className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center gap-1 transition-colors"
-						title="Clear all history"
-					>
-						<Trash className="w-4 h-4" />
-						<span>Clear All</span>
-					</button>
 				</div>
 			</div>
 
@@ -412,11 +434,44 @@ function App() {
 				)}
 			</div>
 
-			{/* Footer hint */}
+			{/* Footer with hint and settings */}
 			<div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 px-3 py-2">
-				<div className="flex items-center justify-between text-xs text-gray-400">
-					<span>↑↓ Navigate • Enter Copy • Esc Close</span>
-					<span>Cmd+Shift+V Toggle</span>
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2 text-xs text-gray-400">
+						<span>↑↓ Navigate • Enter Copy • Esc Close</span>
+						<span className="hidden sm:inline">Cmd+Shift+V Toggle</span>
+					</div>
+					{/* Settings Menu */}
+					<div className="relative" ref={settingsMenuRef}>
+						<button
+							type="button"
+							onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
+							className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+							title="Settings"
+							aria-label="Settings"
+						>
+							<Settings className="w-4 h-4" />
+						</button>
+						{isSettingsMenuOpen && (
+							<div className="absolute bottom-full right-0 mb-2 w-40 bg-gray-700 border border-gray-600 rounded-lg shadow-lg overflow-hidden z-50">
+								<button
+									type="button"
+									onClick={handleClearAll}
+									className="w-full px-4 py-2 text-left text-sm text-white hover:bg-gray-600 transition-colors flex items-center gap-2"
+								>
+									<Trash2 className="w-4 h-4" />
+									Clear All
+								</button>
+								<button
+									type="button"
+									onClick={handleQuit}
+									className="w-full px-4 py-2 text-left text-sm text-white hover:bg-gray-600 transition-colors"
+								>
+									Quit
+								</button>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
