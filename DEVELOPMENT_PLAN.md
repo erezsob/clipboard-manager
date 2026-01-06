@@ -357,8 +357,8 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - **Hook Type**: Git pre-push hook (runs before `git push`)
 - **Implementation Tool**: Husky (primary method for hook management)
 - **Checks to Run**:
-  1. **Linting**: Run Biome linter (`biome check` or `biome lint`)
-  2. **Formatting**: Verify code is formatted (`biome format --check` or `biome check --write`)
+  1. **Formatting**: Automatically format code with Biome (`biome format --write`) and stage changes
+  2. **Linting**: Run Biome linter (`biome check` or `biome lint`)
   3. **Type Checking**: Run TypeScript compiler (`tsc --noEmit`)
   4. **Knip Check**: Run Knip to detect unused code (`knip` or `knip --production`)
 - **Implementation Steps**:
@@ -372,6 +372,10 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   ```bash
   #!/usr/bin/env sh
   . "$(dirname -- "$0")/_/husky.sh"
+  
+  # Format code and stage any changes
+  pnpm format
+  git add -u
   
   # Run linting
   pnpm biome check || exit 1

@@ -3,6 +3,12 @@
 
 echo "Running pre-push checks..."
 
+# Format code and stage any formatting changes
+echo "Formatting code with Biome..."
+pnpm format
+# Stage any formatting changes that were made
+git add -u
+
 # Run linting
 echo "Checking code with Biome..."
 pnpm biome check || {

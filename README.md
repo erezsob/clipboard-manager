@@ -118,11 +118,12 @@ pnpm type-check
 This project uses [Husky](https://typicode.github.io/husky/) to manage Git hooks. A pre-push hook is configured to automatically run code quality checks before pushing to the remote repository.
 
 **Pre-Push Hook Checks:**
+- **Formatting**: Automatically formats code with Biome and stages the changes
 - **Linting**: Runs Biome linter to check for code quality issues
 - **Type Checking**: Validates TypeScript types (`tsc --noEmit`)
 - **Unused Code Detection**: Runs Knip to identify unused code and dependencies
 
-The hook will prevent pushing if any of these checks fail. To bypass the hook in emergency situations, use:
+The hook will automatically format your code before running other checks. If formatting changes are made, they will be automatically staged and included in your push. The hook will prevent pushing if any of the checks fail. To bypass the hook in emergency situations, use:
 ```bash
 git push --no-verify
 ```
