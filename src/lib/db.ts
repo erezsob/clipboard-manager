@@ -53,12 +53,7 @@ export interface SearchHistoryOptions extends GetHistoryOptions {
  * Search history by content with pagination support
  */
 export async function searchHistory(options: SearchHistoryOptions) {
-	const {
-		query,
-		limit = 50,
-		favoritesOnly = false,
-		offset = 0,
-	} = options;
+	const { query, limit = 50, favoritesOnly = false, offset = 0 } = options;
 	await waitForElectronAPI();
 	return window.electronAPI.db.searchHistory(
 		query,

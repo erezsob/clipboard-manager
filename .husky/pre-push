@@ -3,11 +3,17 @@
 
 echo "Running pre-push checks..."
 
-# Format code and stage any formatting changes
+# Format code and amend commit if changes were made
 echo "Formatting code with Biome..."
 pnpm format
-# Stage any formatting changes that were made
-git add -u
+
+# Check if there are any formatting changes
+if ! git diff --quiet; then
+	echo "Formatting changes detected. Amending commit..."
+	git add -u
+	git commit --amend --no-edit --no-verify
+	echo "✅ Commit amended with formatting changes"
+fi
 
 # Run linting
 echo "Checking code with Biome..."
