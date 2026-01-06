@@ -11,6 +11,7 @@ import {
 	nativeImage,
 	Tray,
 } from "electron";
+import { runMigrations } from "./lib/migrations";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,35 +95,8 @@ function initDatabase(): void {
 	const dbPath = path.join(app.getPath("userData"), "clipboard.db");
 	db = new Database(dbPath);
 
-	// Create history table if it doesn't exist
-	db.exec(`
-    CREATE TABLE IF NOT EXISTS history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      content TEXT NOT NULL,
-      type TEXT NOT NULL DEFAULT 'text',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `);
-
-	// Create index
-	db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_created_at ON history(created_at DESC)
-  `);
-
-	// Migration 002: Add favorites support
-	// Check if column exists by trying to add it (will fail silently if it exists)
-	try {
-		db.exec(`
-      ALTER TABLE history ADD COLUMN is_favorite INTEGER DEFAULT 0
-    `);
-	} catch {
-		// Column already exists, ignore
-	}
-
-	// Create index for favorites
-	db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_is_favorite ON history(is_favorite)
-  `);
+	// Run all migrations
+	runMigrations(db);
 }
 
 function createTray(): void {
