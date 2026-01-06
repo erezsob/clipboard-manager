@@ -207,25 +207,42 @@ ipcMain.handle("clipboard:writeText", (_event, text: string) => {
 
 ipcMain.handle(
 	"db:getHistory",
-	(_event, limit: number = 50, favoritesOnly: boolean = false) => {
+	(
+		_event,
+		limit: number = 50,
+		favoritesOnly: boolean = false,
+		offset: number = 0,
+	) => {
 		if (!db) throw new Error("Database not initialized");
 		const query = `
-		SELECT id, content, type, created_at, is_favorite FROM history ${favoritesOnly ? "WHERE is_favorite = 1" : ""} ORDER BY created_at DESC LIMIT ?`;
+		SELECT id, content, type, created_at, is_favorite FROM history ${favoritesOnly ? "WHERE is_favorite = 1" : ""} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 		const stmt = db.prepare(query);
-		return stmt.all(limit);
+		return stmt.all(limit, offset);
 	},
 );
+
+// Normalize whitespace for near-duplicate detection
+function normalizeWhitespace(text: string): string {
+	return text.trim().replace(/\s+/g, " ");
+}
 
 ipcMain.handle("db:addClip", (_event, text: string) => {
 	if (!db) throw new Error("Database not initialized");
 	if (!text || text.trim().length === 0) return;
 
-	// Check for duplicate
+	// Normalize the new text for comparison
+	const normalizedNew = normalizeWhitespace(text);
+
+	// Check for exact duplicate or near-duplicate
 	const recent = db
 		.prepare("SELECT content FROM history ORDER BY created_at DESC LIMIT 1")
 		.get() as { content: string } | undefined;
-	if (recent && recent.content === text) {
-		return;
+	if (recent) {
+		const normalizedRecent = normalizeWhitespace(recent.content);
+		// Skip if exact duplicate or near-duplicate (normalized whitespace matches)
+		if (recent.content === text || normalizedRecent === normalizedNew) {
+			return;
+		}
 	}
 
 	const stmt = db.prepare("INSERT INTO history (content, type) VALUES (?, ?)");
@@ -239,6 +256,7 @@ ipcMain.handle(
 		query: string,
 		limit: number = 50,
 		favoritesOnly: boolean = false,
+		offset: number = 0,
 	) => {
 		if (!db) throw new Error("Database not initialized");
 		let sql =
@@ -246,9 +264,9 @@ ipcMain.handle(
 		if (favoritesOnly) {
 			sql += " AND is_favorite = 1";
 		}
-		sql += " ORDER BY created_at DESC LIMIT ?";
+		sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
 		const stmt = db.prepare(sql);
-		return stmt.all(`%${query}%`, limit);
+		return stmt.all(`%${query}%`, limit, offset);
 	},
 );
 

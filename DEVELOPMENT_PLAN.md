@@ -16,17 +16,17 @@ Personal-use macOS clipboard manager with background monitoring, local SQLite st
 - Dark mode UI
 - Window starts hidden
 - Pre-push git hook (linting, formatting, types, knip checks)
-
-### 🔨 Needs Implementation
 - Settings menu (cog icon) in bottom right with Quit and Clear All options
 - System tray icon with menu
-- Favorites/star feature
-- Individual item deletion
-- Load more functionality (pagination)
-- Clear all history
+- Favorites/star feature with filter toggle
+- Individual item deletion (trash icon)
+- Load more functionality (pagination with 100-item batches)
+- Clear all history (with confirmation dialog)
 - Near-duplicate detection (whitespace normalization)
-- Error handling with retry logic
-- Settings/preferences
+- Error handling with retry logic (exponential backoff)
+
+### 🔨 Needs Implementation
+- Settings/preferences window
 - Automated testing suite (unit, integration, component, E2E)
 
 ---
@@ -206,21 +206,25 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   return normalizeWhitespace(newText) === normalizeWhitespace(recentText);
 }
 ```
+- ✅ Implemented in Phase 3
 
 ### 5.3 Pagination Implementation
 - Initial load: `SELECT ... LIMIT 100`
 - Load more: `SELECT ... LIMIT 100 OFFSET {currentCount}`
 - Track loaded count in component state
+- ✅ Implemented in Phase 3
 
-### 5.4 System Tray (Rust)
-- Use `tauri-plugin-system-tray` or native macOS APIs
-- Create tray icon with menu
+### 5.4 System Tray (Electron)
+- Use Electron's `Tray` API (native macOS support)
+- Create tray icon with menu using `Menu.buildFromTemplate()`
 - Handle click events to show window
+- ✅ Implemented in Phase 1
 
 ### 5.5 Error Handling & Retry
 - Wrap clipboard operations in try-catch
 - Implement exponential backoff retry (3 attempts: 1s, 2s, 4s)
 - Display user-friendly error messages
+- ✅ Implemented in Phase 1
 
 ### 5.6 TanStack Query Integration
 - Replace manual state management with TanStack Query (React Query)
@@ -300,6 +304,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - **Accessibility**: 
   - Keyboard navigation support
   - ARIA labels for screen readers
+- ✅ Implemented in Phase 1
 
 ### 5.10 Code Refactoring & Component Extraction
 - **Goal**: Improve code maintainability, readability, and testability by breaking down App.tsx
@@ -413,16 +418,16 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 5. ✅ Update queries to support favorites
 
 ### Phase 3: Pagination & Performance (Priority: Medium)
-1. 🔨 Update `getHistory()` to support pagination
-2. 🔨 "Load More" button UI
-3. 🔨 State management for loaded items
-4. 🔨 Near-duplicate detection (whitespace normalization)
+1. ✅ Update `getHistory()` to support pagination
+2. ✅ "Load More" button UI
+3. ✅ State management for loaded items
+4. ✅ Near-duplicate detection (whitespace normalization)
 
 ### Phase 4: Polish & Settings (Priority: Medium)
 1. 🔨 Settings/preferences window
-2. 🔨 Clear all history confirmation
+2. ✅ Clear all history confirmation (already implemented in Phase 1)
 3. 🔨 UI refinements
-4. 🔨 Error message styling
+4. ✅ Error message styling (already implemented in Phase 1)
 
 ### Phase 4.5: Code Refactoring & Component Extraction (Priority: Medium)
 1. 🔨 Extract custom hooks from App.tsx:
@@ -558,25 +563,27 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 
 ### Current Stack
 - **Frontend**: React + TypeScript + Tailwind CSS v4
-- **Backend**: Rust (Tauri v2)
-- **Database**: SQLite (via `tauri-plugin-sql`)
-- **State Management**: TanStack Query (React Query) - Phase 5
-- **Testing**: Vitest + React Testing Library + Playwright - Phase 7
-- **Plugins**:
-  - `@tauri-apps/plugin-clipboard-manager`
-  - `@tauri-apps/plugin-global-shortcut`
-  - `@tauri-apps/plugin-sql`
-  - `@tauri-apps/plugin-opener`
+- **Backend**: Electron (Node.js + TypeScript)
+- **Database**: SQLite (via `better-sqlite3`)
+- **State Management**: React hooks (TanStack Query planned for Phase 5)
+- **Testing**: Not yet implemented (planned for Phase 7)
+- **Build Tool**: Vite
+- **Linting/Formatting**: Biome
+- **Package Manager**: pnpm
 
-### Additional Plugins Needed
-- **System Tray**: Native Tauri APIs or `tauri-plugin-system-tray` (if available)
+### Electron APIs Used
+- `electron.clipboard` - Clipboard read/write operations
+- `electron.globalShortcut` - Global keyboard shortcuts
+- `electron.Tray` - System tray icon and menu
+- `electron.BrowserWindow` - Main application window
+- `electron.ipcMain/ipcRenderer` - Inter-process communication
 
 ---
 
 ## 9. Success Criteria
 
 ### Must Have (MVP)
-- 🔨 Settings menu in bottom right (Quit, Clear All)
+- ✅ Settings menu in bottom right (Quit, Clear All)
 - ✅ System tray icon with click-to-open
 - ✅ Delete individual items
 - ✅ Favorites with filter
@@ -623,14 +630,22 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ## Next Steps
 
 1. ✅ Review and approve this plan
-2. 🔨 Prioritize Phase 1 tasks
-3. 🔨 Begin implementation with system tray integration
-4. 🔨 Iterate based on usage and feedback
+2. ✅ Complete Phase 1: Core Enhancements
+3. ✅ Complete Phase 2: Favorites System
+4. ✅ Complete Phase 3: Pagination & Performance
+5. ✅ Complete Phase 8: Pre-Push Git Hook
+6. 🔨 Begin Phase 4: Polish & Settings (or Phase 4.5: Code Refactoring)
+7. 🔨 Iterate based on usage and feedback
 
 ---
 
-**Document Version**: 1.5  
+**Document Version**: 1.6  
 **Last Updated**: 2026-01-03  
-**Status**: Ready for Implementation  
-**Changes**: Added Phase 5 (TanStack Query Integration), Phase 6 (Persisted Snippets Management), Phase 7 (Automated Testing Suite), Phase 8 (Pre-Push Git Hook), and high-priority Settings Menu feature (Phase 1). Phase 8 (Pre-Push Git Hook) completed.
+**Status**: In Progress  
+**Changes**: 
+- Phase 3 (Pagination & Performance) completed: Added pagination support with offset parameter, "Load More" button UI, state management for loaded items, and near-duplicate detection with whitespace normalization.
+- Updated "Current State Assessment" to reflect all completed features from Phases 1, 2, 3, and 8.
+- Fixed inconsistencies in Technical Stack section (corrected to Electron instead of Tauri).
+- Updated Success Criteria to mark Settings menu as completed.
+- Updated Next Steps to reflect current progress.
 

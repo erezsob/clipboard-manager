@@ -9,13 +9,13 @@ export function useClipboard() {
 	const [lastClipboardText, setLastClipboardText] = useState<string>("");
 	const intervalRef = useRef<number | null>(null);
 
-	// Initialize and load history
+	// Initialize and load history (initial 100 items)
 	useEffect(() => {
 		const init = async () => {
 			try {
 				// Wait a bit for Electron API to be ready
 				await new Promise((resolve) => setTimeout(resolve, 100));
-				const items = await getHistory();
+				const items = await getHistory(100);
 				setHistory(items);
 			} catch (error) {
 				console.error("Failed to load history:", error);
@@ -36,7 +36,8 @@ export function useClipboard() {
 				if (text && text !== lastClipboardText) {
 					setLastClipboardText(text);
 					await addClip(text);
-					const items = await getHistory();
+					// Refresh with initial 100 items
+					const items = await getHistory(100);
 					setHistory(items);
 				}
 			} catch (error) {
@@ -54,9 +55,9 @@ export function useClipboard() {
 		};
 	}, [lastClipboardText]);
 
-	// Refresh history function
+	// Refresh history function (loads initial 100 items)
 	const refreshHistory = async () => {
-		const items = await getHistory();
+		const items = await getHistory(100);
 		setHistory(items);
 	};
 

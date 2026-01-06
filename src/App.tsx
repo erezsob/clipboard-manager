@@ -5,6 +5,7 @@ import { useClipboard } from "./hooks/useClipboard";
 import {
 	clearAllHistory,
 	deleteHistoryItem,
+	getHistory,
 	type HistoryItem,
 	searchHistory,
 	toggleFavorite,
@@ -19,6 +20,9 @@ function App() {
 	const [error, setError] = useState<string | null>(null);
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
+	const [loadedCount, setLoadedCount] = useState(100); // Track how many items we've loaded
+	const [isLoadingMore, setIsLoadingMore] = useState(false);
+	const [hasMore, setHasMore] = useState(true); // Track if there are more items to load
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -52,40 +56,49 @@ function App() {
 		};
 	}, []);
 
-	// Search functionality
+	// Search functionality with pagination
 	useEffect(() => {
 		const performSearch = async () => {
+			// Reset loaded count when search or filter changes
+			setLoadedCount(100);
+			
 			if (searchQuery.trim() === "") {
 				// If no search query, filter history based on favoritesOnly
 				if (favoritesOnly) {
-					const results = await searchHistory("", 50, true);
+					const results = await searchHistory("", 100, true, 0);
 					setFilteredHistory(results);
+					setHasMore(results.length === 100); // More items if we got exactly 100
 				} else {
-					setFilteredHistory(history);
+					// Use first 100 items from history
+					const items = history.slice(0, 100);
+					setFilteredHistory(items);
+					setHasMore(history.length > 100); // More items if history has more than 100
 				}
 				setSelectedIndex(0);
 				return;
 			}
 
-			const results = await searchHistory(searchQuery, 50, favoritesOnly);
+			const results = await searchHistory(searchQuery, 100, favoritesOnly, 0);
 			setFilteredHistory(results);
+			setHasMore(results.length === 100); // More items if we got exactly 100
 			setSelectedIndex(0);
 		};
 
 		performSearch();
 	}, [searchQuery, history, favoritesOnly]);
 
-	// Update filtered history when history changes
+	// Update filtered history when history changes (but don't reset pagination)
 	useEffect(() => {
 		if (searchQuery.trim() === "") {
 			if (favoritesOnly) {
-				// Need to fetch favorites
-				searchHistory("", 50, true).then(setFilteredHistory);
+				// Need to fetch favorites with current loaded count
+				searchHistory("", loadedCount, true, 0).then(setFilteredHistory);
 			} else {
-				setFilteredHistory(history);
+				// Use loaded count items from history
+				setFilteredHistory(history.slice(0, loadedCount));
 			}
 		}
-	}, [history, searchQuery, favoritesOnly]);
+	}, [history, searchQuery, favoritesOnly, loadedCount]);
 
 	// Keyboard handlers
 	const handleKeyDown = useCallback(
@@ -244,17 +257,17 @@ function App() {
 			setError(null);
 			await toggleFavorite(itemId);
 			await refreshHistory();
-			// Update filtered history
+			// Update filtered history with current loaded count
 			if (searchQuery.trim() === "") {
 				if (favoritesOnly) {
-					const items = await searchHistory("", 50, true);
+					const items = await searchHistory("", loadedCount, true, 0);
 					setFilteredHistory(items);
 				} else {
-					const items = await searchHistory("");
+					const items = await searchHistory("", loadedCount, false, 0);
 					setFilteredHistory(items);
 				}
 			} else {
-				const items = await searchHistory(searchQuery, 50, favoritesOnly);
+				const items = await searchHistory(searchQuery, loadedCount, favoritesOnly, 0);
 				setFilteredHistory(items);
 			}
 		} catch (error) {
@@ -273,17 +286,17 @@ function App() {
 			setError(null);
 			await deleteHistoryItem(itemId);
 			await refreshHistory();
-			// Update filtered history if needed
+			// Update filtered history with current loaded count
 			if (searchQuery.trim() === "") {
 				if (favoritesOnly) {
-					const items = await searchHistory("", 50, true);
+					const items = await searchHistory("", loadedCount, true, 0);
 					setFilteredHistory(items);
 				} else {
-					const items = await searchHistory("");
+					const items = await searchHistory("", loadedCount, false, 0);
 					setFilteredHistory(items);
 				}
 			} else {
-				const items = await searchHistory(searchQuery, 50, favoritesOnly);
+				const items = await searchHistory(searchQuery, loadedCount, favoritesOnly, 0);
 				setFilteredHistory(items);
 			}
 			// Adjust selected index if needed
@@ -313,6 +326,8 @@ function App() {
 				await refreshHistory();
 				setFilteredHistory([]);
 				setSelectedIndex(0);
+				setLoadedCount(100); // Reset loaded count
+				setHasMore(true); // Reset hasMore flag
 			} catch (error) {
 				setError(
 					`Failed to clear history: ${
@@ -320,6 +335,44 @@ function App() {
 					}`,
 				);
 			}
+		}
+	};
+
+	// Handle load more
+	const handleLoadMore = async () => {
+		if (isLoadingMore || !hasMore) return;
+		
+		setIsLoadingMore(true);
+		try {
+			setError(null);
+			const nextBatch = 100;
+			const newOffset = loadedCount;
+			
+			if (searchQuery.trim() === "") {
+				if (favoritesOnly) {
+					const items = await searchHistory("", nextBatch, true, newOffset);
+					setFilteredHistory((prev) => [...prev, ...items]);
+					setHasMore(items.length === nextBatch); // More if we got exactly the batch size
+				} else {
+					const items = await getHistory(nextBatch, false, newOffset);
+					setFilteredHistory((prev) => [...prev, ...items]);
+					setHasMore(items.length === nextBatch); // More if we got exactly the batch size
+				}
+			} else {
+				const items = await searchHistory(searchQuery, nextBatch, favoritesOnly, newOffset);
+				setFilteredHistory((prev) => [...prev, ...items]);
+				setHasMore(items.length === nextBatch); // More if we got exactly the batch size
+			}
+			
+			setLoadedCount((prev) => prev + nextBatch);
+		} catch (error) {
+			setError(
+				`Failed to load more items: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			);
+		} finally {
+			setIsLoadingMore(false);
 		}
 	};
 
@@ -410,7 +463,8 @@ function App() {
 						)}
 					</div>
 				) : (
-					filteredHistory.map((item, index) => (
+					<>
+						{filteredHistory.map((item, index) => (
 						// biome-ignore lint/a11y/useSemanticElements: Need div with role="button" to allow nested buttons (Copy/Delete)
 						<div
 							key={item.id}
@@ -530,7 +584,28 @@ function App() {
 								</div>
 							</div>
 						</div>
-					))
+						))}
+						{/* Load More Button */}
+						{filteredHistory.length > 0 && hasMore && (
+							<div className="flex justify-center py-4">
+								<button
+									type="button"
+									onClick={handleLoadMore}
+									disabled={isLoadingMore}
+									className={`
+										px-4 py-2 rounded-lg transition-colors text-sm font-medium
+										${
+											isLoadingMore
+												? "bg-gray-700 text-gray-500 cursor-not-allowed"
+												: "bg-gray-700 text-white hover:bg-gray-600"
+										}
+									`}
+								>
+									{isLoadingMore ? "Loading..." : "Load More"}
+								</button>
+							</div>
+						)}
+					</>
 				)}
 			</div>
 

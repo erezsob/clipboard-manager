@@ -9,6 +9,7 @@ interface ElectronAPI {
 		getHistory: (
 			limit?: number,
 			favoritesOnly?: boolean,
+			offset?: number,
 		) => Promise<
 			Array<{
 				id: number;
@@ -23,6 +24,7 @@ interface ElectronAPI {
 			query: string,
 			limit?: number,
 			favoritesOnly?: boolean,
+			offset?: number,
 		) => Promise<
 			Array<{
 				id: number;

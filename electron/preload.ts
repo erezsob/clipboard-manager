@@ -7,8 +7,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			ipcRenderer.invoke("clipboard:writeText", text) as Promise<void>,
 	},
 	db: {
-		getHistory: (limit?: number, favoritesOnly?: boolean) =>
-			ipcRenderer.invoke("db:getHistory", limit, favoritesOnly) as Promise<
+		getHistory: (limit?: number, favoritesOnly?: boolean, offset?: number) =>
+			ipcRenderer.invoke("db:getHistory", limit, favoritesOnly, offset) as Promise<
 				Array<{
 					id: number;
 					content: string;
@@ -19,12 +19,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			>,
 		addClip: (text: string) =>
 			ipcRenderer.invoke("db:addClip", text) as Promise<void>,
-		searchHistory: (query: string, limit?: number, favoritesOnly?: boolean) =>
+		searchHistory: (query: string, limit?: number, favoritesOnly?: boolean, offset?: number) =>
 			ipcRenderer.invoke(
 				"db:searchHistory",
 				query,
 				limit,
 				favoritesOnly,
+				offset,
 			) as Promise<
 				Array<{
 					id: number;

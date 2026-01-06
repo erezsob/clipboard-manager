@@ -31,26 +31,28 @@ export async function addClip(text: string) {
 }
 
 /**
- * Get the last 50 history items
+ * Get history items with pagination support
  */
 export async function getHistory(
 	limit: number = 50,
 	favoritesOnly: boolean = false,
+	offset: number = 0,
 ) {
 	await waitForElectronAPI();
-	return window.electronAPI.db.getHistory(limit, favoritesOnly);
+	return window.electronAPI.db.getHistory(limit, favoritesOnly, offset);
 }
 
 /**
- * Search history by content
+ * Search history by content with pagination support
  */
 export async function searchHistory(
 	query: string,
 	limit: number = 50,
 	favoritesOnly: boolean = false,
+	offset: number = 0,
 ) {
 	await waitForElectronAPI();
-	return window.electronAPI.db.searchHistory(query, limit, favoritesOnly);
+	return window.electronAPI.db.searchHistory(query, limit, favoritesOnly, offset);
 }
 
 /**
