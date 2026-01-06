@@ -301,7 +301,53 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Keyboard navigation support
   - ARIA labels for screen readers
 
-### 5.10 Pre-Push Git Hook Implementation
+### 5.10 Code Refactoring & Component Extraction
+- **Goal**: Improve code maintainability, readability, and testability by breaking down App.tsx
+- **Custom Hooks to Extract**:
+  - `useWindowVisibility`: Manages window visibility state, focus handling, and Electron API integration
+  - `useHistorySearch`: Handles search query state, favorites filter, and filtered history updates
+  - `useKeyboardNavigation`: Manages keyboard shortcuts (Arrow keys, Enter, Escape) and selected index
+  - `useHistoryActions`: Encapsulates all history item actions (copy, delete, favorite, clear all)
+- **Components to Extract**:
+  - `ErrorBanner`: Displays error messages with dismiss functionality
+  - `SearchBar`: Search input with clear button and favorites filter toggle
+  - `HistoryItem`: Individual history item with content, date, and action buttons (star, copy, delete)
+  - `HistoryList`: Container for history items with empty state handling
+  - `SettingsMenu`: Dropdown menu with Clear All and Quit options
+  - `Footer`: Footer bar with keyboard hints and settings menu
+- **Utility Functions**:
+  - Move `formatDate` to `src/lib/utils.ts`
+  - Move `truncateText` to `src/lib/utils.ts`
+  - Move `retryOperation` to `src/lib/retry.ts` or `src/lib/utils.ts`
+- **File Structure**:
+  ```
+  src/
+    components/
+      history/
+        HistoryItem.tsx
+        HistoryList.tsx
+      common/
+        ErrorBanner.tsx
+        SearchBar.tsx
+        SettingsMenu.tsx
+        Footer.tsx
+    hooks/
+      useWindowVisibility.ts
+      useHistorySearch.ts
+      useKeyboardNavigation.ts
+      useHistoryActions.ts
+    lib/
+      utils.ts
+      retry.ts
+  ```
+- **Benefits**:
+  - Reduced complexity in App.tsx (from ~580 lines to <200 lines)
+  - Improved testability (components and hooks can be tested in isolation)
+  - Better reusability (components can be used in other contexts)
+  - Easier maintenance (changes isolated to specific components/hooks)
+  - Better code organization and discoverability
+
+### 5.11 Pre-Push Git Hook Implementation
 - **Purpose**: Enforce code quality checks before code is pushed to remote repository
 - **Hook Type**: Git pre-push hook (runs before `git push`)
 - **Implementation Tool**: Husky (primary method for hook management)
@@ -377,6 +423,32 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 2. 🔨 Clear all history confirmation
 3. 🔨 UI refinements
 4. 🔨 Error message styling
+
+### Phase 4.5: Code Refactoring & Component Extraction (Priority: Medium)
+1. 🔨 Extract custom hooks from App.tsx:
+   - `useWindowVisibility` - Handle window visibility state and focus
+   - `useHistorySearch` - Manage search query and filtered history
+   - `useKeyboardNavigation` - Handle keyboard shortcuts and navigation
+   - `useHistoryActions` - Handle item actions (copy, delete, favorite, clear)
+2. 🔨 Extract UI components from App.tsx:
+   - `ErrorBanner` - Reusable error message component
+   - `SearchBar` - Search input with favorites filter toggle
+   - `HistoryItem` - Individual history item component with actions
+   - `HistoryList` - List container for history items
+   - `SettingsMenu` - Settings dropdown menu component
+   - `Footer` - Footer with hints and settings
+3. 🔨 Extract utility functions:
+   - `formatDate` - Move to `src/lib/utils.ts`
+   - `truncateText` - Move to `src/lib/utils.ts`
+   - `retryOperation` - Move to `src/lib/utils.ts` or create `src/lib/retry.ts`
+4. 🔨 Organize component structure:
+   - Create `src/components/` directory
+   - Group related components in subdirectories (e.g., `history/`, `common/`)
+5. 🔨 Improve code readability:
+   - Reduce App.tsx from ~580 lines to <200 lines
+   - Better separation of concerns
+   - Improved testability through component isolation
+   - Reusable components for future features
 
 ### Phase 5: TanStack Query Integration (Priority: Medium)
 1. 🔨 Install and configure `@tanstack/react-query`
