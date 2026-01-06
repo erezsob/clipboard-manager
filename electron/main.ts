@@ -270,9 +270,7 @@ ipcMain.handle("db:toggleFavorite", (_event, id: number) => {
 	);
 	stmt.run(id);
 	// Return the new favorite state
-	const getStmt = db.prepare(
-		"SELECT is_favorite FROM history WHERE id = ?",
-	);
+	const getStmt = db.prepare("SELECT is_favorite FROM history WHERE id = ?");
 	const result = getStmt.get(id) as { is_favorite: number } | undefined;
 	return result ? Boolean(result.is_favorite) : false;
 });

@@ -19,11 +19,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			>,
 		addClip: (text: string) =>
 			ipcRenderer.invoke("db:addClip", text) as Promise<void>,
-		searchHistory: (
-			query: string,
-			limit?: number,
-			favoritesOnly?: boolean,
-		) =>
+		searchHistory: (query: string, limit?: number, favoritesOnly?: boolean) =>
 			ipcRenderer.invoke(
 				"db:searchHistory",
 				query,
