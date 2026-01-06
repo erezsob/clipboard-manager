@@ -1,21 +1,11 @@
+import { waitFor } from "../utils";
+
 export interface HistoryItem {
 	id: number;
 	content: string;
 	type: string;
 	created_at: string;
 	is_favorite: number;
-}
-
-async function waitFor(condition: () => boolean, maxAttempts = 50) {
-	let attempts = 0;
-	while (attempts < maxAttempts) {
-		if (condition()) {
-			return;
-		}
-		attempts++;
-		await new Promise((resolve) => setTimeout(resolve, 100));
-	}
-	throw new Error("Condition not met after waiting");
 }
 
 async function waitForElectronAPI() {

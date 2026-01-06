@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { INITIAL_LOAD_COUNT } from "../lib/constants";
 import { addClip, getHistory, type HistoryItem } from "../lib/db";
+import { waitFor } from "../utils";
 
 /** Interval for polling clipboard (ms) */
 const CLIPBOARD_POLL_INTERVAL = 1000;
 
 /** Delay before retrying history load after failure (ms) */
 const HISTORY_LOAD_RETRY_DELAY = 500;
-
-/** Delay before initializing to allow Electron API to be ready (ms) */
-const INITIALIZATION_DELAY = 100;
 
 /**
  * Hook that polls the clipboard and manages history
@@ -25,9 +23,7 @@ export function useClipboard() {
 		const init = async () => {
 			try {
 				// Wait a bit for Electron API to be ready
-				await new Promise((resolve) =>
-					setTimeout(resolve, INITIALIZATION_DELAY),
-				);
+				await waitFor(() => window.electronAPI !== undefined);
 				const items = await getHistory({ limit: INITIAL_LOAD_COUNT });
 				setHistory(items);
 			} catch (error) {
