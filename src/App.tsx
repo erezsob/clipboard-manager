@@ -2,7 +2,7 @@ import { Copy, Search, Settings, Star, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useClipboard } from "./hooks/useClipboard";
 import { usePagination } from "./hooks/usePagination";
-import { SEARCH_FOCUS_DELAY, VISIBILITY_CHECK_INTERVAL } from "./lib/constants";
+import { useWindowVisibility } from "./hooks/useWindowVisibility";
 import {
 	clearAllHistory,
 	deleteHistoryItem,
@@ -19,7 +19,6 @@ function App() {
 	const { history, refreshHistory } = useClipboard();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
-	const [isVisible, setIsVisible] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -40,34 +39,8 @@ function App() {
 		history,
 	});
 
-	// Initialize window visibility state
-	useEffect(() => {
-		setIsVisible(false);
-	}, []);
-
-	// Sync window visibility state with Electron window
-	// Global shortcut is handled in Electron main process
-	useEffect(() => {
-		const checkVisibility = async () => {
-			if (!window.electronAPI) return;
-
-			try {
-				const visible = await window.electronAPI.window.isVisible();
-				setIsVisible(visible);
-				if (visible) {
-					// Focus search input when window becomes visible
-					setTimeout(() => {
-						searchInputRef.current?.focus();
-					}, SEARCH_FOCUS_DELAY);
-				}
-			} catch (error) {
-				console.error("Failed to check window visibility:", error);
-			}
-		};
-
-		const interval = setInterval(checkVisibility, VISIBILITY_CHECK_INTERVAL);
-		return () => clearInterval(interval);
-	}, []);
+	// Window visibility hook manages visibility state and focus handling
+	const { isVisible, setIsVisible } = useWindowVisibility(searchInputRef);
 
 	// Reset pagination and refresh filtered history when search or filter changes
 	useEffect(() => {
@@ -161,7 +134,7 @@ function App() {
 				return;
 			}
 		},
-		[isVisible, filteredHistory, selectedIndex],
+		[isVisible, filteredHistory, selectedIndex, setIsVisible],
 	);
 
 	// Register keyboard event listener
@@ -223,7 +196,7 @@ function App() {
 				handleError(error, "Failed to copy to clipboard");
 			}
 		},
-		[handleError],
+		[handleError, setIsVisible],
 	);
 
 	/**
