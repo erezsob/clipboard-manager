@@ -108,6 +108,21 @@ function initDatabase(): void {
 	db.exec(`
     CREATE INDEX IF NOT EXISTS idx_created_at ON history(created_at DESC)
   `);
+
+	// Migration 002: Add favorites support
+	// Check if column exists by trying to add it (will fail silently if it exists)
+	try {
+		db.exec(`
+      ALTER TABLE history ADD COLUMN is_favorite INTEGER DEFAULT 0
+    `);
+	} catch {
+		// Column already exists, ignore
+	}
+
+	// Create index for favorites
+	db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_is_favorite ON history(is_favorite)
+  `);
 }
 
 function createTray(): void {
@@ -216,13 +231,16 @@ ipcMain.handle("clipboard:writeText", (_event, text: string) => {
 	clipboard.writeText(text);
 });
 
-ipcMain.handle("db:getHistory", (_event, limit: number = 50) => {
-	if (!db) throw new Error("Database not initialized");
-	const stmt = db.prepare(
-		"SELECT id, content, type, created_at FROM history ORDER BY created_at DESC LIMIT ?",
-	);
-	return stmt.all(limit);
-});
+ipcMain.handle(
+	"db:getHistory",
+	(_event, limit: number = 50, favoritesOnly: boolean = false) => {
+		if (!db) throw new Error("Database not initialized");
+		const query = `
+		SELECT id, content, type, created_at, is_favorite FROM history ${favoritesOnly ? "WHERE is_favorite = 1" : ""} ORDER BY created_at DESC LIMIT ?`;
+		const stmt = db.prepare(query);
+		return stmt.all(limit);
+	},
+);
 
 ipcMain.handle("db:addClip", (_event, text: string) => {
 	if (!db) throw new Error("Database not initialized");
@@ -242,11 +260,20 @@ ipcMain.handle("db:addClip", (_event, text: string) => {
 
 ipcMain.handle(
 	"db:searchHistory",
-	(_event, query: string, limit: number = 50) => {
+	(
+		_event,
+		query: string,
+		limit: number = 50,
+		favoritesOnly: boolean = false,
+	) => {
 		if (!db) throw new Error("Database not initialized");
-		const stmt = db.prepare(
-			"SELECT id, content, type, created_at FROM history WHERE content LIKE ? ORDER BY created_at DESC LIMIT ?",
-		);
+		let sql =
+			"SELECT id, content, type, created_at, is_favorite FROM history WHERE content LIKE ?";
+		if (favoritesOnly) {
+			sql += " AND is_favorite = 1";
+		}
+		sql += " ORDER BY created_at DESC LIMIT ?";
+		const stmt = db.prepare(sql);
 		return stmt.all(`%${query}%`, limit);
 	},
 );
@@ -260,6 +287,20 @@ ipcMain.handle("db:deleteHistoryItem", (_event, id: number) => {
 ipcMain.handle("db:clearAllHistory", () => {
 	if (!db) throw new Error("Database not initialized");
 	db.prepare("DELETE FROM history").run();
+});
+
+ipcMain.handle("db:toggleFavorite", (_event, id: number) => {
+	if (!db) throw new Error("Database not initialized");
+	const stmt = db.prepare(
+		"UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?",
+	);
+	stmt.run(id);
+	// Return the new favorite state
+	const getStmt = db.prepare(
+		"SELECT is_favorite FROM history WHERE id = ?",
+	);
+	const result = getStmt.get(id) as { is_favorite: number } | undefined;
+	return result ? Boolean(result.is_favorite) : false;
 });
 
 ipcMain.handle("window:center", () => {

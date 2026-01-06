@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Copy, Search, Settings, Trash2, X } from "lucide-react";
+import { Copy, Search, Settings, Star, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useClipboard } from "./hooks/useClipboard";
 import {
@@ -7,6 +7,7 @@ import {
 	deleteHistoryItem,
 	type HistoryItem,
 	searchHistory,
+	toggleFavorite,
 } from "./lib/db";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
 	const [isVisible, setIsVisible] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -54,25 +56,36 @@ function App() {
 	useEffect(() => {
 		const performSearch = async () => {
 			if (searchQuery.trim() === "") {
-				setFilteredHistory(history);
+				// If no search query, filter history based on favoritesOnly
+				if (favoritesOnly) {
+					const results = await searchHistory("", 50, true);
+					setFilteredHistory(results);
+				} else {
+					setFilteredHistory(history);
+				}
 				setSelectedIndex(0);
 				return;
 			}
 
-			const results = await searchHistory(searchQuery);
+			const results = await searchHistory(searchQuery, 50, favoritesOnly);
 			setFilteredHistory(results);
 			setSelectedIndex(0);
 		};
 
 		performSearch();
-	}, [searchQuery, history]);
+	}, [searchQuery, history, favoritesOnly]);
 
 	// Update filtered history when history changes
 	useEffect(() => {
 		if (searchQuery.trim() === "") {
-			setFilteredHistory(history);
+			if (favoritesOnly) {
+				// Need to fetch favorites
+				searchHistory("", 50, true).then(setFilteredHistory);
+			} else {
+				setFilteredHistory(history);
+			}
 		}
-	}, [history, searchQuery]);
+	}, [history, searchQuery, favoritesOnly]);
 
 	// Keyboard handlers
 	const handleKeyDown = useCallback(
@@ -224,6 +237,35 @@ function App() {
 		}
 	};
 
+	// Handle toggle favorite
+	const handleToggleFavorite = async (e: React.MouseEvent, itemId: number) => {
+		e.stopPropagation(); // Prevent item click
+		try {
+			setError(null);
+			await toggleFavorite(itemId);
+			await refreshHistory();
+			// Update filtered history
+			if (searchQuery.trim() === "") {
+				if (favoritesOnly) {
+					const items = await searchHistory("", 50, true);
+					setFilteredHistory(items);
+				} else {
+					const items = await searchHistory("");
+					setFilteredHistory(items);
+				}
+			} else {
+				const items = await searchHistory(searchQuery, 50, favoritesOnly);
+				setFilteredHistory(items);
+			}
+		} catch (error) {
+			setError(
+				`Failed to toggle favorite: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			);
+		}
+	};
+
 	// Handle delete item
 	const handleDeleteItem = async (e: React.MouseEvent, itemId: number) => {
 		e.stopPropagation(); // Prevent item click
@@ -233,10 +275,15 @@ function App() {
 			await refreshHistory();
 			// Update filtered history if needed
 			if (searchQuery.trim() === "") {
-				const items = await searchHistory("");
-				setFilteredHistory(items);
+				if (favoritesOnly) {
+					const items = await searchHistory("", 50, true);
+					setFilteredHistory(items);
+				} else {
+					const items = await searchHistory("");
+					setFilteredHistory(items);
+				}
 			} else {
-				const items = await searchHistory(searchQuery);
+				const items = await searchHistory(searchQuery, 50, favoritesOnly);
 				setFilteredHistory(items);
 			}
 			// Adjust selected index if needed
@@ -329,6 +376,27 @@ function App() {
 							</button>
 						)}
 					</div>
+					{/* Favorites Filter Toggle */}
+					<button
+						type="button"
+						onClick={() => setFavoritesOnly(!favoritesOnly)}
+						className={`
+              p-2 rounded-lg transition-colors
+              ${
+								favoritesOnly
+									? "bg-yellow-600 text-yellow-100 hover:bg-yellow-500"
+									: "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-white"
+							}
+            `}
+						title={favoritesOnly ? "Show all items" : "Show favorites only"}
+						aria-label={
+							favoritesOnly ? "Show all items" : "Show favorites only"
+						}
+					>
+						<Star
+							className={`w-4 h-4 ${favoritesOnly ? "fill-current" : ""}`}
+						/>
+					</button>
 				</div>
 			</div>
 
@@ -392,6 +460,38 @@ function App() {
 											: "opacity-0 group-hover:opacity-100"
 									}`}
 								>
+									<button
+										type="button"
+										onClick={(e) => handleToggleFavorite(e, item.id)}
+										className={`
+                      p-1.5 rounded transition-colors
+                      ${
+												index === selectedIndex
+													? item.is_favorite
+														? "hover:bg-blue-500 text-yellow-300"
+														: "hover:bg-blue-500 text-white"
+													: item.is_favorite
+														? "hover:bg-gray-600 text-yellow-400 hover:text-yellow-300"
+														: "hover:bg-gray-600 text-gray-400 hover:text-white"
+											}
+                    `}
+										title={
+											item.is_favorite
+												? "Remove from favorites"
+												: "Add to favorites"
+										}
+										aria-label={
+											item.is_favorite
+												? "Remove from favorites"
+												: "Add to favorites"
+										}
+									>
+										<Star
+											className={`w-4 h-4 ${
+												item.is_favorite ? "fill-current" : ""
+											}`}
+										/>
+									</button>
 									<button
 										type="button"
 										onClick={(e) => {

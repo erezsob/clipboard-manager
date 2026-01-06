@@ -3,6 +3,7 @@ export interface HistoryItem {
 	content: string;
 	type: string;
 	created_at: string;
+	is_favorite: number;
 }
 
 async function waitFor(condition: () => boolean, maxAttempts = 50) {
@@ -32,17 +33,24 @@ export async function addClip(text: string) {
 /**
  * Get the last 50 history items
  */
-export async function getHistory(limit: number = 50) {
+export async function getHistory(
+	limit: number = 50,
+	favoritesOnly: boolean = false,
+) {
 	await waitForElectronAPI();
-	return window.electronAPI.db.getHistory(limit);
+	return window.electronAPI.db.getHistory(limit, favoritesOnly);
 }
 
 /**
  * Search history by content
  */
-export async function searchHistory(query: string, limit: number = 50) {
+export async function searchHistory(
+	query: string,
+	limit: number = 50,
+	favoritesOnly: boolean = false,
+) {
 	await waitForElectronAPI();
-	return window.electronAPI.db.searchHistory(query, limit);
+	return window.electronAPI.db.searchHistory(query, limit, favoritesOnly);
 }
 
 /**
@@ -59,4 +67,12 @@ export async function deleteHistoryItem(id: number) {
 export async function clearAllHistory() {
 	await waitForElectronAPI();
 	window.electronAPI.db.clearAllHistory();
+}
+
+/**
+ * Toggle favorite status of a history item
+ */
+export async function toggleFavorite(id: number): Promise<boolean> {
+	await waitForElectronAPI();
+	return window.electronAPI.db.toggleFavorite(id);
 }
