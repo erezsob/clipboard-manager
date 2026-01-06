@@ -1,0 +1,55 @@
+# Cursor IDE Rules for Clipboard Manager
+
+## Project Context
+This is a personal-use macOS clipboard manager built with Electron, React, TypeScript, and SQLite. The application provides background clipboard monitoring, local SQLite storage, and a system tray interface.
+
+## Code Style & Standards
+- Follow the code quality standards in `.docs/CODE_STANDARDS.md`
+- Use TypeScript with strict mode
+- Prefer functional components and hooks
+- Extract constants to `src/lib/constants.ts`
+- Keep components under 300 lines when possible
+- Refrain from using React's useEffect as much as possible
+- Prefer handling effects on user interaction rather than relying on local state
+- Prioritize semantic HTML and accessible UI
+- When a function has more than 2 arguments, prefer passing an object
+
+## Architecture Patterns
+- See `.docs/ARCHITECTURE.md` for system architecture details
+- Database operations go through `src/lib/db.ts`
+- IPC communication via `electron/preload.ts` and `electron/main.ts`
+- Electron main process: `electron/main.ts`
+- React frontend: `src/App.tsx` and components
+- Preload script must be compiled to CommonJS (see `electron/tsconfig.preload.json`)
+
+## File Organization
+- React components: `src/` directory
+- Custom hooks: `src/hooks/`
+- Utility functions: `src/lib/`
+- Electron main process: `electron/`
+- Database migrations: `electron/migrations/`
+- Documentation: `.docs/` directory
+
+## When Making Changes
+1. Check `.docs/CURRENT_STATE.md` for what's already implemented
+2. Follow patterns in existing code
+3. Update relevant documentation files in `.docs/`
+4. Run `pnpm types:check` and `pnpm lint` before committing
+5. Ensure pre-push git hook passes (formatting, linting, types, knip)
+
+## Key Documentation Files
+- Current State: `.docs/CURRENT_STATE.md` - What's implemented
+- Architecture: `.docs/ARCHITECTURE.md` - System design & tech stack
+- Code Standards: `.docs/CODE_STANDARDS.md` - Quality requirements
+- Features: `.docs/FEATURES.md` - Feature specs & roadmap
+- Database: `.docs/DATABASE.md` - Schema & migrations
+- Workflow: `.docs/WORKFLOW.md` - Development process
+
+## Tech Stack
+- Frontend: React 19 + TypeScript + Tailwind CSS v4
+- Backend: Electron (Node.js + TypeScript)
+- Database: SQLite (via `better-sqlite3`)
+- Build Tool: Vite
+- Linting/Formatting: Biome
+- Package Manager: pnpm
+

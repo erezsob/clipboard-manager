@@ -23,7 +23,7 @@ A personal-use macOS clipboard manager with background monitoring, local SQLite 
 
 ### 🔨 Planned Features
 
-See [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) for detailed roadmap including:
+See [.docs/FEATURES.md](.docs/FEATURES.md) for detailed roadmap including:
 - Settings menu with Quit option
 - System tray integration
 - Favorites/star system
@@ -146,7 +146,15 @@ mac-clipboard-manager/
 │   └── main.tsx       # React entry point
 ├── public/            # Static assets
 ├── package.json       # Dependencies and scripts
-└── DEVELOPMENT_PLAN.md # Detailed development roadmap
+├── .docs/             # Project documentation
+│   ├── README.md      # Documentation index
+│   ├── CURRENT_STATE.md
+│   ├── ARCHITECTURE.md
+│   ├── CODE_STANDARDS.md
+│   ├── FEATURES.md
+│   ├── DATABASE.md
+│   └── WORKFLOW.md
+└── .cursorrules       # Cursor IDE rules
 ```
 
 ## Usage
@@ -179,11 +187,15 @@ CREATE TABLE history (
 This is an active development project. Current focus areas:
 - Core functionality is working
 - UI/UX improvements in progress
-- Additional features planned (see DEVELOPMENT_PLAN.md)
+- Additional features planned (see [.docs/CURRENT_STATE.md](.docs/CURRENT_STATE.md) and [.docs/FEATURES.md](.docs/FEATURES.md))
 
 ## Contributing
 
-This is a personal-use project, but suggestions and feedback are welcome. Please refer to the [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) for planned features and implementation details.
+This is a personal-use project, but suggestions and feedback are welcome. Please refer to the [.docs/](.docs/) directory for project documentation:
+- [Current State](.docs/CURRENT_STATE.md) - What's implemented
+- [Features](.docs/FEATURES.md) - Planned features and roadmap
+- [Architecture](.docs/ARCHITECTURE.md) - System design
+- [Code Standards](.docs/CODE_STANDARDS.md) - Quality requirements
 
 ## License
 

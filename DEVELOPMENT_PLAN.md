@@ -1,5 +1,22 @@
 # Clipboard Manager - Development Plan Document
 
+> **⚠️ DEPRECATED**: This file has been split into a modular documentation structure.
+> 
+> **Migration Date**: 2026-01-06
+> 
+> **New Documentation Structure**: See [.docs/](.docs/) directory:
+> - [.docs/README.md](.docs/README.md) - Documentation index
+> - [.docs/CURRENT_STATE.md](.docs/CURRENT_STATE.md) - Implementation status
+> - [.docs/ARCHITECTURE.md](.docs/ARCHITECTURE.md) - System architecture
+> - [.docs/CODE_STANDARDS.md](.docs/CODE_STANDARDS.md) - Code quality standards
+> - [.docs/FEATURES.md](.docs/FEATURES.md) - Feature specifications
+> - [.docs/DATABASE.md](.docs/DATABASE.md) - Database schema
+> - [.docs/WORKFLOW.md](.docs/WORKFLOW.md) - Development workflow
+> 
+> This file is kept for reference but should not be updated. All new documentation should go in the `.docs/` directory.
+
+---
+
 ## Executive Summary
 Personal-use macOS clipboard manager with background monitoring, local SQLite storage, and system tray interface. Focus on core functionality first, with enhancements planned for later.
 
