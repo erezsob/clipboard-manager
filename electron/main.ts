@@ -11,7 +11,7 @@ import {
 	nativeImage,
 	Tray,
 } from "electron";
-import { runMigrations } from "./lib/migrations";
+import { runMigrations } from "./lib/migrations.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
