@@ -694,6 +694,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - [ ] Performance considerations addressed
 - [ ] Code is maintainable and readable
 - [ ] Follows existing patterns and conventions
+- [ ] Follow best practices
 
 ---
 
