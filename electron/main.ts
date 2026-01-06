@@ -214,8 +214,7 @@ ipcMain.handle(
 		offset: number = 0,
 	) => {
 		if (!db) throw new Error("Database not initialized");
-		const query = `
-		SELECT id, content, type, created_at, is_favorite FROM history ${favoritesOnly ? "WHERE is_favorite = 1" : ""} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+		const query = `SELECT id, content, type, created_at, is_favorite FROM history ${favoritesOnly ? "WHERE is_favorite = 1" : ""} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 		const stmt = db.prepare(query);
 		return stmt.all(limit, offset);
 	},

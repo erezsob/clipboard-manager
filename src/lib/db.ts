@@ -17,7 +17,7 @@ async function waitForElectronAPI() {
  */
 export async function addClip(text: string) {
 	await waitForElectronAPI();
-	window.electronAPI.db.addClip(text);
+	await window.electronAPI.db.addClip(text);
 }
 
 export interface GetHistoryOptions {

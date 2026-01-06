@@ -15,7 +15,7 @@ const HISTORY_LOAD_RETRY_DELAY = 500;
  */
 export function useClipboard() {
 	const [history, setHistory] = useState<HistoryItem[]>([]);
-	const [lastClipboardText, setLastClipboardText] = useState<string>("");
+	const lastClipboardTextRef = useRef<string>("");
 	const intervalRef = useRef<number | null>(null);
 
 	// Initialize and load history
@@ -24,6 +24,15 @@ export function useClipboard() {
 			try {
 				// Wait a bit for Electron API to be ready
 				await waitFor(() => window.electronAPI !== undefined);
+
+				// Initialize lastClipboardTextRef with current clipboard content
+				try {
+					const currentText = await window.electronAPI.clipboard.readText();
+					lastClipboardTextRef.current = currentText || "";
+				} catch (error) {
+					console.error("Error reading initial clipboard:", error);
+				}
+
 				const items = await getHistory({ limit: INITIAL_LOAD_COUNT });
 				setHistory(items);
 			} catch (error) {
@@ -42,9 +51,11 @@ export function useClipboard() {
 				if (!window.electronAPI) return;
 
 				const text = await window.electronAPI.clipboard.readText();
-				if (text && text !== lastClipboardText) {
-					setLastClipboardText(text);
-					await addClip(text);
+				const currentText = text || "";
+
+				if (currentText && currentText !== lastClipboardTextRef.current) {
+					lastClipboardTextRef.current = currentText;
+					await addClip(currentText);
 					// Refresh with initial load count
 					const items = await getHistory({ limit: INITIAL_LOAD_COUNT });
 					setHistory(items);
@@ -54,18 +65,24 @@ export function useClipboard() {
 			}
 		};
 
-		pollClipboard();
-		intervalRef.current = window.setInterval(
-			pollClipboard,
-			CLIPBOARD_POLL_INTERVAL,
-		);
+		// Start polling after a short delay to ensure Electron API is ready
+		const startPolling = async () => {
+			await waitFor(() => window.electronAPI !== undefined);
+			pollClipboard();
+			intervalRef.current = window.setInterval(
+				pollClipboard,
+				CLIPBOARD_POLL_INTERVAL,
+			);
+		};
+
+		startPolling();
 
 		return () => {
 			if (intervalRef.current !== null) {
 				clearInterval(intervalRef.current);
 			}
 		};
-	}, [lastClipboardText]);
+	}, []);
 
 	/**
 	 * Manually refresh history from database
