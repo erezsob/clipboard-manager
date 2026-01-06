@@ -1,104 +1,106 @@
-import { format } from "date-fns";
 import { Copy, Search, Settings, Star, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useClipboard } from "./hooks/useClipboard";
+import { usePagination } from "./hooks/usePagination";
+import { SEARCH_FOCUS_DELAY, VISIBILITY_CHECK_INTERVAL } from "./lib/constants";
 import {
 	clearAllHistory,
 	deleteHistoryItem,
-	getHistory,
 	type HistoryItem,
-	searchHistory,
 	toggleFavorite,
 } from "./lib/db";
+import { formatDate, retryOperation, truncateText } from "./lib/utils";
 
+/**
+ * Main application component for clipboard manager
+ * Handles UI, search, pagination, and clipboard operations
+ */
 function App() {
 	const { history, refreshHistory } = useClipboard();
 	const [searchQuery, setSearchQuery] = useState("");
-	const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>([]);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [isVisible, setIsVisible] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
-	const [loadedCount, setLoadedCount] = useState(100); // Track how many items we've loaded
-	const [isLoadingMore, setIsLoadingMore] = useState(false);
-	const [hasMore, setHasMore] = useState(true); // Track if there are more items to load
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
 
-	// Initialize window visibility
+	// Pagination hook manages filtered history and pagination state
+	const {
+		filteredHistory,
+		isLoadingMore,
+		hasMore,
+		refreshFilteredHistory,
+		loadMore,
+		resetPagination,
+	} = usePagination({
+		searchQuery,
+		favoritesOnly,
+		history,
+	});
+
+	// Initialize window visibility state
 	useEffect(() => {
-		// Window starts hidden (visible: false in config)
 		setIsVisible(false);
 	}, []);
 
+	// Sync window visibility state with Electron window
 	// Global shortcut is handled in Electron main process
-	// Listen for window visibility changes to sync state
 	useEffect(() => {
 		const checkVisibility = async () => {
-			if (window.electronAPI) {
+			if (!window.electronAPI) return;
+
+			try {
 				const visible = await window.electronAPI.window.isVisible();
 				setIsVisible(visible);
 				if (visible) {
-					// Focus search input when showing
+					// Focus search input when window becomes visible
 					setTimeout(() => {
 						searchInputRef.current?.focus();
-					}, 100);
+					}, SEARCH_FOCUS_DELAY);
 				}
+			} catch (error) {
+				console.error("Failed to check window visibility:", error);
 			}
 		};
 
-		// Check visibility periodically
-		const interval = setInterval(checkVisibility, 100);
-
-		return () => {
-			clearInterval(interval);
-		};
+		const interval = setInterval(checkVisibility, VISIBILITY_CHECK_INTERVAL);
+		return () => clearInterval(interval);
 	}, []);
 
-	// Search functionality with pagination
+	// Reset pagination and refresh filtered history when search or filter changes
 	useEffect(() => {
 		const performSearch = async () => {
-			// Reset loaded count when search or filter changes
-			setLoadedCount(100);
-			
-			if (searchQuery.trim() === "") {
-				// If no search query, filter history based on favoritesOnly
-				if (favoritesOnly) {
-					const results = await searchHistory("", 100, true, 0);
-					setFilteredHistory(results);
-					setHasMore(results.length === 100); // More items if we got exactly 100
-				} else {
-					// Use first 100 items from history
-					const items = history.slice(0, 100);
-					setFilteredHistory(items);
-					setHasMore(history.length > 100); // More items if history has more than 100
-				}
+			try {
+				resetPagination();
+				await refreshFilteredHistory();
 				setSelectedIndex(0);
-				return;
+			} catch (error) {
+				console.error("Failed to perform search:", error);
+				setError("Failed to search history. Please try again.");
 			}
-
-			const results = await searchHistory(searchQuery, 100, favoritesOnly, 0);
-			setFilteredHistory(results);
-			setHasMore(results.length === 100); // More items if we got exactly 100
-			setSelectedIndex(0);
 		};
 
 		performSearch();
-	}, [searchQuery, history, favoritesOnly]);
+		// refreshFilteredHistory already depends on searchQuery and favoritesOnly via loadFilteredHistory
+		// so it will change when those values change, triggering this effect
+	}, [resetPagination, refreshFilteredHistory]);
 
-	// Update filtered history when history changes (but don't reset pagination)
+	// Refresh filtered history when underlying history changes (preserves pagination)
 	useEffect(() => {
-		if (searchQuery.trim() === "") {
-			if (favoritesOnly) {
-				// Need to fetch favorites with current loaded count
-				searchHistory("", loadedCount, true, 0).then(setFilteredHistory);
-			} else {
-				// Use loaded count items from history
-				setFilteredHistory(history.slice(0, loadedCount));
+		const updateHistory = async () => {
+			try {
+				await refreshFilteredHistory();
+			} catch (error) {
+				console.error("Failed to update filtered history:", error);
 			}
-		}
-	}, [history, searchQuery, favoritesOnly, loadedCount]);
+		};
+
+		updateHistory();
+		// refreshFilteredHistory already depends on history via loadFilteredHistory
+		// so it will change when history changes, triggering this effect
+	}, [refreshFilteredHistory]);
 
 	// Keyboard handlers
 	const handleKeyDown = useCallback(
@@ -190,49 +192,24 @@ function App() {
 		};
 	}, [isSettingsMenuOpen]);
 
-	// Format date for display
-	const formatDate = (dateString: string) => {
-		try {
-			const date = new Date(dateString);
-			const now = new Date();
-			const diffMs = now.getTime() - date.getTime();
-			const diffMins = Math.floor(diffMs / 60000);
+	/**
+	 * Handles errors consistently across the application
+	 */
+	const handleError = useCallback((error: unknown, defaultMessage: string) => {
+		const message = error instanceof Error ? error.message : String(error);
+		setError(`${defaultMessage}: ${message}`);
+		console.error(defaultMessage, error);
+	}, []);
 
-			if (diffMins < 1) return "Just now";
-			if (diffMins < 60) return `${diffMins}m ago`;
-			if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-			return format(date, "MMM d, yyyy");
-		} catch {
-			return dateString;
-		}
-	};
+	/**
+	 * Handles clicking on a history item to copy it to clipboard
+	 */
+	const handleItemClick = useCallback(
+		async (item: HistoryItem) => {
+			if (!window.electronAPI) return;
 
-	// Retry logic for clipboard operations
-	const retryOperation = async <T,>(
-		operation: () => Promise<T>,
-		maxRetries: number = 3,
-		baseDelay: number = 1000,
-	): Promise<T> => {
-		let lastError: Error | null = null;
-		for (let attempt = 0; attempt < maxRetries; attempt++) {
 			try {
-				return await operation();
-			} catch (error) {
-				lastError = error instanceof Error ? error : new Error(String(error));
-				if (attempt < maxRetries - 1) {
-					const delay = baseDelay * 2 ** attempt;
-					await new Promise((resolve) => setTimeout(resolve, delay));
-				}
-			}
-		}
-		throw lastError || new Error("Operation failed after retries");
-	};
-
-	// Handle item click
-	const handleItemClick = async (item: HistoryItem) => {
-		try {
-			setError(null);
-			if (window.electronAPI) {
+				setError(null);
 				await retryOperation(async () => {
 					await window.electronAPI.clipboard.writeText(item.content);
 				});
@@ -240,155 +217,101 @@ function App() {
 				setIsVisible(false);
 				setSearchQuery("");
 				setSelectedIndex(0);
+			} catch (error) {
+				handleError(error, "Failed to copy to clipboard");
 			}
-		} catch (error) {
-			setError(
-				`Failed to copy to clipboard: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
-		}
-	};
+		},
+		[handleError],
+	);
 
-	// Handle toggle favorite
-	const handleToggleFavorite = async (e: React.MouseEvent, itemId: number) => {
-		e.stopPropagation(); // Prevent item click
-		try {
-			setError(null);
-			await toggleFavorite(itemId);
-			await refreshHistory();
-			// Update filtered history with current loaded count
-			if (searchQuery.trim() === "") {
-				if (favoritesOnly) {
-					const items = await searchHistory("", loadedCount, true, 0);
-					setFilteredHistory(items);
-				} else {
-					const items = await searchHistory("", loadedCount, false, 0);
-					setFilteredHistory(items);
-				}
-			} else {
-				const items = await searchHistory(searchQuery, loadedCount, favoritesOnly, 0);
-				setFilteredHistory(items);
-			}
-		} catch (error) {
-			setError(
-				`Failed to toggle favorite: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
-		}
-	};
-
-	// Handle delete item
-	const handleDeleteItem = async (e: React.MouseEvent, itemId: number) => {
-		e.stopPropagation(); // Prevent item click
-		try {
-			setError(null);
-			await deleteHistoryItem(itemId);
-			await refreshHistory();
-			// Update filtered history with current loaded count
-			if (searchQuery.trim() === "") {
-				if (favoritesOnly) {
-					const items = await searchHistory("", loadedCount, true, 0);
-					setFilteredHistory(items);
-				} else {
-					const items = await searchHistory("", loadedCount, false, 0);
-					setFilteredHistory(items);
-				}
-			} else {
-				const items = await searchHistory(searchQuery, loadedCount, favoritesOnly, 0);
-				setFilteredHistory(items);
-			}
-			// Adjust selected index if needed
-			if (selectedIndex >= filteredHistory.length - 1) {
-				setSelectedIndex(Math.max(0, filteredHistory.length - 2));
-			}
-		} catch (error) {
-			setError(
-				`Failed to delete item: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
-		}
-	};
-
-	// Handle clear all history
-	const handleClearAll = async () => {
-		setIsSettingsMenuOpen(false);
-		if (
-			window.confirm(
-				"Are you sure you want to clear all clipboard history? This action cannot be undone.",
-			)
-		) {
+	/**
+	 * Handles toggling favorite status of a history item
+	 */
+	const handleToggleFavorite = useCallback(
+		async (e: React.MouseEvent, itemId: number) => {
+			e.stopPropagation();
 			try {
 				setError(null);
-				await clearAllHistory();
+				await toggleFavorite(itemId);
 				await refreshHistory();
-				setFilteredHistory([]);
-				setSelectedIndex(0);
-				setLoadedCount(100); // Reset loaded count
-				setHasMore(true); // Reset hasMore flag
+				await refreshFilteredHistory();
 			} catch (error) {
-				setError(
-					`Failed to clear history: ${
-						error instanceof Error ? error.message : String(error)
-					}`,
-				);
+				handleError(error, "Failed to toggle favorite");
 			}
-		}
-	};
+		},
+		[handleError, refreshHistory, refreshFilteredHistory],
+	);
 
-	// Handle load more
-	const handleLoadMore = async () => {
-		if (isLoadingMore || !hasMore) return;
-		
-		setIsLoadingMore(true);
+	/**
+	 * Handles deleting a history item
+	 */
+	const handleDeleteItem = useCallback(
+		async (e: React.MouseEvent, itemId: number) => {
+			e.stopPropagation();
+			try {
+				setError(null);
+				await deleteHistoryItem(itemId);
+				await refreshHistory();
+				await refreshFilteredHistory();
+				// Adjust selected index if deleted item was at the end
+				if (selectedIndex >= filteredHistory.length - 1) {
+					setSelectedIndex(Math.max(0, filteredHistory.length - 2));
+				}
+			} catch (error) {
+				handleError(error, "Failed to delete item");
+			}
+		},
+		[
+			handleError,
+			refreshHistory,
+			refreshFilteredHistory,
+			selectedIndex,
+			filteredHistory.length,
+		],
+	);
+
+	/**
+	 * Handles clearing all clipboard history with confirmation
+	 */
+	const handleClearAll = useCallback(async () => {
+		setIsSettingsMenuOpen(false);
+		const confirmed = window.confirm(
+			"Are you sure you want to clear all clipboard history? This action cannot be undone.",
+		);
+		if (!confirmed) return;
+
 		try {
 			setError(null);
-			const nextBatch = 100;
-			const newOffset = loadedCount;
-			
-			if (searchQuery.trim() === "") {
-				if (favoritesOnly) {
-					const items = await searchHistory("", nextBatch, true, newOffset);
-					setFilteredHistory((prev) => [...prev, ...items]);
-					setHasMore(items.length === nextBatch); // More if we got exactly the batch size
-				} else {
-					const items = await getHistory(nextBatch, false, newOffset);
-					setFilteredHistory((prev) => [...prev, ...items]);
-					setHasMore(items.length === nextBatch); // More if we got exactly the batch size
-				}
-			} else {
-				const items = await searchHistory(searchQuery, nextBatch, favoritesOnly, newOffset);
-				setFilteredHistory((prev) => [...prev, ...items]);
-				setHasMore(items.length === nextBatch); // More if we got exactly the batch size
-			}
-			
-			setLoadedCount((prev) => prev + nextBatch);
+			await clearAllHistory();
+			await refreshHistory();
+			resetPagination();
+			setSelectedIndex(0);
 		} catch (error) {
-			setError(
-				`Failed to load more items: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			);
-		} finally {
-			setIsLoadingMore(false);
+			handleError(error, "Failed to clear history");
 		}
-	};
+	}, [handleError, refreshHistory, resetPagination]);
 
-	// Handle quit
-	const handleQuit = async () => {
+	/**
+	 * Handles loading more items for pagination
+	 */
+	const handleLoadMore = useCallback(async () => {
+		try {
+			setError(null);
+			await loadMore();
+		} catch (error) {
+			handleError(error, "Failed to load more items");
+		}
+	}, [handleError, loadMore]);
+
+	/**
+	 * Handles quitting the application
+	 */
+	const handleQuit = useCallback(async () => {
 		setIsSettingsMenuOpen(false);
 		if (window.electronAPI) {
 			await window.electronAPI.app.quit();
 		}
-	};
-
-	// Truncate text for display
-	const truncateText = (text: string, maxLength: number = 100) => {
-		if (text.length <= maxLength) return text;
-		return `${text.substring(0, maxLength)}...`;
-	};
+	}, []);
 
 	return (
 		<div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
@@ -465,20 +388,20 @@ function App() {
 				) : (
 					<>
 						{filteredHistory.map((item, index) => (
-						// biome-ignore lint/a11y/useSemanticElements: Need div with role="button" to allow nested buttons (Copy/Delete)
-						<div
-							key={item.id}
-							id={`history-item-${index}`}
-							onClick={() => handleItemClick(item)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
-									handleItemClick(item);
-								}
-							}}
-							role="button"
-							tabIndex={0}
-							className={`
+							// biome-ignore lint/a11y/useSemanticElements: Need div with role="button" to allow nested buttons (Copy/Delete)
+							<div
+								key={item.id}
+								id={`history-item-${index}`}
+								onClick={() => handleItemClick(item)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										handleItemClick(item);
+									}
+								}}
+								role="button"
+								tabIndex={0}
+								className={`
                 group relative p-3 rounded-lg cursor-pointer transition-all duration-150
                 ${
 									index === selectedIndex
@@ -486,14 +409,14 @@ function App() {
 										: "bg-gray-800 hover:bg-gray-700 text-gray-100"
 								}
               `}
-						>
-							<div className="flex items-start justify-between gap-2">
-								<div className="flex-1 min-w-0">
-									<p className="text-sm break-words">
-										{truncateText(item.content)}
-									</p>
-									<span
-										className={`
+							>
+								<div className="flex items-start justify-between gap-2">
+									<div className="flex-1 min-w-0">
+										<p className="text-sm break-words">
+											{truncateText(item.content)}
+										</p>
+										<span
+											className={`
                       text-xs whitespace-nowrap block mt-1
                       ${
 												index === selectedIndex
@@ -501,23 +424,23 @@ function App() {
 													: "text-gray-400"
 											}
                     `}
-									>
-										{formatDate(item.created_at)}
-									</span>
-								</div>
+										>
+											{formatDate(item.created_at)}
+										</span>
+									</div>
 
-								{/* Hover-reveal action buttons */}
-								<div
-									className={`flex items-center gap-1 transition-opacity duration-150 ml-2 ${
-										index === selectedIndex
-											? "opacity-100"
-											: "opacity-0 group-hover:opacity-100"
-									}`}
-								>
-									<button
-										type="button"
-										onClick={(e) => handleToggleFavorite(e, item.id)}
-										className={`
+									{/* Hover-reveal action buttons */}
+									<div
+										className={`flex items-center gap-1 transition-opacity duration-150 ml-2 ${
+											index === selectedIndex
+												? "opacity-100"
+												: "opacity-0 group-hover:opacity-100"
+										}`}
+									>
+										<button
+											type="button"
+											onClick={(e) => handleToggleFavorite(e, item.id)}
+											className={`
                       p-1.5 rounded transition-colors
                       ${
 												index === selectedIndex
@@ -529,30 +452,30 @@ function App() {
 														: "hover:bg-gray-600 text-gray-400 hover:text-white"
 											}
                     `}
-										title={
-											item.is_favorite
-												? "Remove from favorites"
-												: "Add to favorites"
-										}
-										aria-label={
-											item.is_favorite
-												? "Remove from favorites"
-												: "Add to favorites"
-										}
-									>
-										<Star
-											className={`w-4 h-4 ${
-												item.is_favorite ? "fill-current" : ""
-											}`}
-										/>
-									</button>
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											handleItemClick(item);
-										}}
-										className={`
+											title={
+												item.is_favorite
+													? "Remove from favorites"
+													: "Add to favorites"
+											}
+											aria-label={
+												item.is_favorite
+													? "Remove from favorites"
+													: "Add to favorites"
+											}
+										>
+											<Star
+												className={`w-4 h-4 ${
+													item.is_favorite ? "fill-current" : ""
+												}`}
+											/>
+										</button>
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleItemClick(item);
+											}}
+											className={`
                       p-1.5 rounded transition-colors
                       ${
 												index === selectedIndex
@@ -560,15 +483,15 @@ function App() {
 													: "hover:bg-gray-600 text-gray-400 hover:text-white"
 											}
                     `}
-										title="Copy to clipboard"
-										aria-label="Copy to clipboard"
-									>
-										<Copy className="w-4 h-4" />
-									</button>
-									<button
-										type="button"
-										onClick={(e) => handleDeleteItem(e, item.id)}
-										className={`
+											title="Copy to clipboard"
+											aria-label="Copy to clipboard"
+										>
+											<Copy className="w-4 h-4" />
+										</button>
+										<button
+											type="button"
+											onClick={(e) => handleDeleteItem(e, item.id)}
+											className={`
                       p-1.5 rounded transition-colors
                       ${
 												index === selectedIndex
@@ -576,14 +499,14 @@ function App() {
 													: "hover:bg-red-600 text-gray-400 hover:text-white"
 											}
                     `}
-										title="Delete item"
-										aria-label="Delete this clipboard item"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
+											title="Delete item"
+											aria-label="Delete this clipboard item"
+										>
+											<Trash2 className="w-4 h-4" />
+										</button>
+									</div>
 								</div>
 							</div>
-						</div>
 						))}
 						{/* Load More Button */}
 						{filteredHistory.length > 0 && hasMore && (

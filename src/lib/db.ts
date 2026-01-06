@@ -52,7 +52,12 @@ export async function searchHistory(
 	offset: number = 0,
 ) {
 	await waitForElectronAPI();
-	return window.electronAPI.db.searchHistory(query, limit, favoritesOnly, offset);
+	return window.electronAPI.db.searchHistory(
+		query,
+		limit,
+		favoritesOnly,
+		offset,
+	);
 }
 
 /**
