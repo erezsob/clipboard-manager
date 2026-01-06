@@ -10,16 +10,18 @@ This directory contains all project documentation for AI agents and developers.
 - **Features**: [FEATURES.md](./FEATURES.md) - Feature specifications & roadmap
 - **Database**: [DATABASE.md](./DATABASE.md) - Schema & migrations
 - **Workflow**: [WORKFLOW.md](./WORKFLOW.md) - Development process & git hooks
+- **Agent Workflow**: [AGENT_WORKFLOW.md](./AGENT_WORKFLOW.md) - How to work with AI agents
 
 ## For AI Agents
 
 When working on this project:
 
-1. **Always check [CURRENT_STATE.md](./CURRENT_STATE.md) first** to understand what exists
-2. **Refer to [CODE_STANDARDS.md](./CODE_STANDARDS.md)** for all code changes
-3. **Check [ARCHITECTURE.md](./ARCHITECTURE.md)** for system design patterns
-4. **Update relevant docs** when making changes
-5. **See [FEATURES.md](./FEATURES.md)** for feature specifications and implementation details
+1. **Read [AGENT_WORKFLOW.md](./AGENT_WORKFLOW.md) first** for recommended interaction patterns
+2. **Always check [CURRENT_STATE.md](./CURRENT_STATE.md) first** to understand what exists
+3. **Refer to [CODE_STANDARDS.md](./CODE_STANDARDS.md)** for all code changes
+4. **Check [ARCHITECTURE.md](./ARCHITECTURE.md)** for system design patterns
+5. **Update relevant docs** when making changes
+6. **See [FEATURES.md](./FEATURES.md)** for feature specifications and implementation details
 
 ## File Descriptions
 
@@ -66,6 +68,14 @@ Development process:
 - Build process
 - Testing approach
 - Development workflow
+
+### AGENT_WORKFLOW.md
+AI agent interaction guide:
+- How to start a new phase
+- Best practices for agent interaction
+- Template prompts
+- Troubleshooting guide
+- Documentation maintenance
 
 ## Navigation Tips
 

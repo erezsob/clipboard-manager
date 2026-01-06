@@ -31,13 +31,15 @@ This is a personal-use macOS clipboard manager built with Electron, React, TypeS
 - Documentation: `.docs/` directory
 
 ## When Making Changes
-1. Check `.docs/CURRENT_STATE.md` for what's already implemented
-2. Follow patterns in existing code
-3. Update relevant documentation files in `.docs/`
-4. Run `pnpm types:check` and `pnpm lint` before committing
-5. Ensure pre-push git hook passes (formatting, linting, types, knip)
+1. Review `.docs/AGENT_WORKFLOW.md` for recommended interaction patterns
+2. Check `.docs/CURRENT_STATE.md` for what's already implemented
+3. Follow patterns in existing code
+4. Update relevant documentation files in `.docs/` when work is complete
+5. Run `pnpm types:check` and `pnpm lint` before committing
+6. Ensure pre-push git hook passes (formatting, linting, types, knip)
 
 ## Key Documentation Files
+- Agent Workflow: `.docs/AGENT_WORKFLOW.md` - How to work with AI agents (READ THIS FIRST)
 - Current State: `.docs/CURRENT_STATE.md` - What's implemented
 - Architecture: `.docs/ARCHITECTURE.md` - System design & tech stack
 - Code Standards: `.docs/CODE_STANDARDS.md` - Quality requirements
