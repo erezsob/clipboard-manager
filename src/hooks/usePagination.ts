@@ -42,16 +42,26 @@ export function usePagination({
 
 			if (trimmedQuery === "") {
 				if (favoritesOnly) {
-					return await searchHistory("", limit, true, offset);
+					return await searchHistory({
+						query: "",
+						limit,
+						favoritesOnly: true,
+						offset,
+					});
 				}
 				// For non-favorites, use in-memory history if available
 				if (offset === 0 && history.length > 0) {
 					return history.slice(0, limit);
 				}
-				return await getHistory(limit, false, offset);
+				return await getHistory({ limit, favoritesOnly: false, offset });
 			}
 
-			return await searchHistory(trimmedQuery, limit, favoritesOnly, offset);
+			return await searchHistory({
+				query: trimmedQuery,
+				limit,
+				favoritesOnly,
+				offset,
+			});
 		},
 		[searchQuery, favoritesOnly, history],
 	);

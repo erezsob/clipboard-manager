@@ -36,19 +36,25 @@ export function truncateText(
 	return `${text.substring(0, maxLength)}...`;
 }
 
+export interface RetryOperationOptions<T> {
+	operation: () => Promise<T>;
+	maxRetries?: number;
+	baseDelay?: number;
+}
+
 /**
  * Retries an async operation with exponential backoff
- * @param operation - Async function to retry
- * @param maxRetries - Maximum number of retry attempts (default: 3)
- * @param baseDelay - Base delay in milliseconds (default: 1000)
+ * @param options - Retry configuration options
+ * @param options.operation - Async function to retry
+ * @param options.maxRetries - Maximum number of retry attempts (default: 3)
+ * @param options.baseDelay - Base delay in milliseconds (default: 1000)
  * @returns Promise that resolves with the operation result
  * @throws Error if all retries fail
  */
 export async function retryOperation<T>(
-	operation: () => Promise<T>,
-	maxRetries: number = 3,
-	baseDelay: number = 1000,
+	options: RetryOperationOptions<T>,
 ): Promise<T> {
+	const { operation, maxRetries = 3, baseDelay = 1000 } = options;
 	let lastError: Error | null = null;
 	for (let attempt = 0; attempt < maxRetries; attempt++) {
 		try {

@@ -30,27 +30,35 @@ export async function addClip(text: string) {
 	window.electronAPI.db.addClip(text);
 }
 
+export interface GetHistoryOptions {
+	limit?: number;
+	favoritesOnly?: boolean;
+	offset?: number;
+}
+
 /**
  * Get history items with pagination support
  */
-export async function getHistory(
-	limit: number = 50,
-	favoritesOnly: boolean = false,
-	offset: number = 0,
-) {
+export async function getHistory(options: GetHistoryOptions = {}) {
+	const { limit = 50, favoritesOnly = false, offset = 0 } = options;
 	await waitForElectronAPI();
 	return window.electronAPI.db.getHistory(limit, favoritesOnly, offset);
+}
+
+export interface SearchHistoryOptions extends GetHistoryOptions {
+	query: string;
 }
 
 /**
  * Search history by content with pagination support
  */
-export async function searchHistory(
-	query: string,
-	limit: number = 50,
-	favoritesOnly: boolean = false,
-	offset: number = 0,
-) {
+export async function searchHistory(options: SearchHistoryOptions) {
+	const {
+		query,
+		limit = 50,
+		favoritesOnly = false,
+		offset = 0,
+	} = options;
 	await waitForElectronAPI();
 	return window.electronAPI.db.searchHistory(
 		query,

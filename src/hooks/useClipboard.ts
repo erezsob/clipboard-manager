@@ -28,7 +28,7 @@ export function useClipboard() {
 				await new Promise((resolve) =>
 					setTimeout(resolve, INITIALIZATION_DELAY),
 				);
-				const items = await getHistory(INITIAL_LOAD_COUNT);
+				const items = await getHistory({ limit: INITIAL_LOAD_COUNT });
 				setHistory(items);
 			} catch (error) {
 				console.error("Failed to load history:", error);
@@ -50,7 +50,7 @@ export function useClipboard() {
 					setLastClipboardText(text);
 					await addClip(text);
 					// Refresh with initial load count
-					const items = await getHistory(INITIAL_LOAD_COUNT);
+					const items = await getHistory({ limit: INITIAL_LOAD_COUNT });
 					setHistory(items);
 				}
 			} catch (error) {
@@ -75,7 +75,7 @@ export function useClipboard() {
 	 * Manually refresh history from database
 	 */
 	const refreshHistory = async () => {
-		const items = await getHistory(INITIAL_LOAD_COUNT);
+		const items = await getHistory({ limit: INITIAL_LOAD_COUNT });
 		setHistory(items);
 	};
 

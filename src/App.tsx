@@ -210,8 +210,10 @@ function App() {
 
 			try {
 				setError(null);
-				await retryOperation(async () => {
-					await window.electronAPI.clipboard.writeText(item.content);
+				await retryOperation({
+					operation: async () => {
+						await window.electronAPI.clipboard.writeText(item.content);
+					},
 				});
 				await window.electronAPI.window.hide();
 				setIsVisible(false);
