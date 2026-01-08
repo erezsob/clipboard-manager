@@ -28,8 +28,17 @@ directories:
 files:
   - dist/**/*
   - electron-dist/**/*
-  - "!node_modules/**/*"
+  - node_modules/better-sqlite3/**/*
+  - node_modules/bindings/**/*
+  - node_modules/file-uri-to-path/**/*
+
+asarUnpack:
   - node_modules/better-sqlite3/**/*
 
 extraMetadata:
   main: electron-dist/main.js
+
+# Rebuild native modules for the target Electron version
+buildDependenciesFromSource: true
+nodeGypRebuild: false
+npmRebuild: true
