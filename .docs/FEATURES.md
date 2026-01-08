@@ -278,6 +278,29 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Easier maintenance (changes isolated to specific components/hooks)
   - Better code organization and discoverability
 
+### Functional Programming Refactor
+**Plan Document**: [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md)
+
+Introduce custom lightweight FP utilities and refactor the codebase to embrace functional programming principles: pure functions, immutability, function composition, and algebraic data types for error handling.
+
+- **FP Utilities Library** (`src/lib/fp.ts`):
+  - `pipe` / `pipeAsync` / `flow` - Function composition utilities
+  - `Result<T, E>` - Explicit success/failure types (Either pattern)
+  - `Option<T>` - Handle nullable values explicitly (Maybe pattern)
+- **Domain Error Types** (`src/lib/errors.ts`):
+  - `DbError` - Database operation errors
+  - `ClipboardError` - Clipboard access errors
+- **Refactored Modules**:
+  - Utility functions using recursion instead of loops
+  - Database layer returning Result types
+  - React hooks with extracted pure transformations
+  - Electron main process with encapsulated state
+- **Benefits**:
+  - Explicit error handling without try/catch
+  - Better composability and testability
+  - Reduced side effects and improved immutability
+  - More declarative code style
+
 ## Future Features Roadmap
 
 ### High Priority (Future)

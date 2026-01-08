@@ -186,6 +186,20 @@
 7. 🔨 Set up Dependabot for dependency updates (optional)
 8. 🔨 Document CI/CD workflow in `.docs/`
 
+### Phase 10: Functional Programming Refactor (Priority: Medium)
+**Plan Document**: [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md)
+
+1. 🔨 Create `src/lib/fp.ts` with pipe, pipeAsync, flow, Result, and Option types
+2. 🔨 Create `src/lib/errors.ts` with domain-specific error types (DbError, ClipboardError)
+3. 🔨 Refactor `src/lib/utils.ts` - recursive retryOperation returning Result
+4. 🔨 Refactor `src/utils.ts` - recursive waitFor returning Result
+5. 🔨 Refactor `src/lib/db.ts` to return Result types from all operations
+6. 🔨 Extract pure transformation functions in `useHistoryMutations.ts`
+7. 🔨 Extract pure change detection in `useClipboardMonitor.ts`
+8. 🔨 Update `useHistoryActions.ts` to work with Result types
+9. 🔨 Encapsulate state and extract pure functions in `electron/main.ts`
+10. 🔨 Expand FP guidelines in `.docs/CODE_STANDARDS.md`
+
 ## Known Issues
 
 _None currently documented. Update this section as issues are discovered._

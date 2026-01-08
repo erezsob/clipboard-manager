@@ -61,6 +61,12 @@
 - Prefer function composition over inheritance
 - Keep functions small and focused on a single transformation
 
+### FP Utilities (see [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md))
+- Use `Result<T, E>` for operations that can fail instead of try/catch
+- Use `Option<T>` for values that may or may not exist instead of null checks
+- Use `pipe` / `pipeAsync` for composing data transformations
+- Extract pure transformation functions from hooks and handlers
+
 ## 10. Best Practices
 - Refrain from using React's useEffect as much as possible
 - Prefer handle effects on user interaction rather than relying on local state
