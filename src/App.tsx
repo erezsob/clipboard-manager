@@ -19,8 +19,17 @@ export default function App() {
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
 	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+	// Ref to hold the refresh callback (set after useHistorySearch is called)
+	const refreshOnVisibleRef = useRef<(() => Promise<void>) | null>(null);
+
 	// Window visibility hook manages visibility state and focus handling
-	const { isVisible, setIsVisible } = useWindowVisibility(searchInputRef);
+	const { isVisible, setIsVisible } = useWindowVisibility({
+		searchInputRef,
+		onBecomeVisible: () => {
+			// Refresh history when window becomes visible
+			refreshOnVisibleRef.current?.();
+		},
+	});
 
 	// History search hook manages search query, favorites filter, and filtered history
 	const {
@@ -101,6 +110,14 @@ export default function App() {
 		clearSearchError();
 		setActionError(null);
 	}, [clearSearchError, setActionError]);
+
+	// Set up the refresh callback for when window becomes visible
+	// This needs to be after useHistorySearch so we have access to refreshFilteredHistory
+	refreshOnVisibleRef.current = useCallback(async () => {
+		await refreshHistory();
+		await refreshFilteredHistory();
+		setSelectedIndex(0);
+	}, [refreshHistory, refreshFilteredHistory, setSelectedIndex]);
 
 	// Reset selected index when search or filter changes
 	const searchFilterKey = useMemo(
