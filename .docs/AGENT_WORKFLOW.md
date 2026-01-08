@@ -6,6 +6,38 @@ This document outlines the recommended workflow for working with AI agents (like
 
 The project uses a modular documentation structure in `.docs/` to optimize AI agent context loading and reduce token usage. This guide explains how to effectively interact with AI agents to ensure they have all necessary context.
 
+---
+
+## 🚀 Quick Reference: Continue to Next Phase
+
+**Copy-paste this template to continue development:**
+
+```
+I want to work on [Phase X: Name]. 
+
+Please:
+1. Review @.docs/CURRENT_STATE.md to understand current status
+2. Check @.docs/FEATURES.md for [Phase X] requirements
+3. Review @.docs/CODE_STANDARDS.md for quality requirements
+4. Check @.docs/ARCHITECTURE.md for system patterns
+5. Review relevant existing code files
+
+Then create a plan for implementing [specific task from phase].
+```
+
+**Even quicker:**
+```
+@.docs/CURRENT_STATE.md @.docs/FEATURES.md - Continue with the next phase of development
+```
+
+**Key reminders:**
+- Always reference specific docs (don't assume agent has context)
+- Priority order: `CURRENT_STATE` → `FEATURES` → `CODE_STANDARDS` → `ARCHITECTURE`
+- Reference existing code patterns: "Follow the pattern in `src/hooks/useClipboard.ts`"
+- At the end: "Please update `.docs/CURRENT_STATE.md` to mark this complete"
+
+---
+
 ## Quick Start: Starting a New Phase
 
 ### Step 1: Identify the Next Phase
