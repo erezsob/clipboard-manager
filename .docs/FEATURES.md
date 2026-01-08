@@ -326,4 +326,5 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - ✅ TanStack Query integration for better data management
 - 🔮 Persisted snippets for frequently used text
 - 🔮 Comprehensive automated test suite (80%+ coverage)
+- 🔮 CI/CD pipeline with GitHub Actions
 

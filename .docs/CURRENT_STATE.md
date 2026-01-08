@@ -31,6 +31,7 @@
 
 - Settings/preferences window
 - Automated testing suite (unit, integration, component, E2E)
+- CI/CD pipeline (GitHub Actions)
 
 ## Implementation Phases
 
@@ -157,6 +158,33 @@
 8. ✅ Test hook behavior (should block push on failures, allow push on success)
 9. ✅ Document hook behavior in README
 10. ✅ Add note about `--no-verify` bypass option for emergencies
+
+### Phase 9: CI/CD Pipeline (Priority: Medium)
+1. 🔨 Create `.github/workflows/` directory
+2. 🔨 Create `ci.yml` workflow for pull requests:
+   - Trigger on pull_request to main branch
+   - Run on ubuntu-latest
+   - Set up Node.js with pnpm
+   - Cache pnpm dependencies
+   - Install dependencies (`pnpm install`)
+   - Run linting (`pnpm lint`)
+   - Run formatting check (`pnpm format --check`)
+   - Run TypeScript type checking (`pnpm types:check`)
+   - Run Knip unused code detection (`pnpm knip`)
+3. 🔨 Add test job to CI workflow (after Phase 7):
+   - Run unit tests (`pnpm test`)
+   - Run integration tests
+   - Upload coverage reports
+4. 🔨 Create `release.yml` workflow for releases (optional):
+   - Trigger on push to main or tags
+   - Build Electron app for macOS
+   - Create GitHub release with artifacts
+5. 🔨 Add status badges to README
+6. 🔨 Configure branch protection rules:
+   - Require CI checks to pass before merge
+   - Require PR reviews (optional for personal project)
+7. 🔨 Set up Dependabot for dependency updates (optional)
+8. 🔨 Document CI/CD workflow in `.docs/`
 
 ## Known Issues
 
