@@ -43,7 +43,6 @@ export function App() {
 		isLoadingMore,
 		hasMore,
 		searchError,
-		clearSearchError,
 		refetchHistory,
 		loadMore,
 	} = useHistorySearch();
@@ -101,11 +100,11 @@ export function App() {
 	});
 
 	// Combine errors from search and actions
+	// Note: searchError auto-clears on successful refetch via TanStack Query
 	const error = searchError || actionError;
 	const clearError = useCallback(() => {
-		clearSearchError();
 		setActionError(null);
-	}, [clearSearchError, setActionError]);
+	}, [setActionError]);
 
 	// Set up the refresh callback for when window becomes visible
 	// This needs to be after useHistorySearch so we have access to refetchHistory

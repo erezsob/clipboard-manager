@@ -17,10 +17,8 @@ interface UseHistorySearchReturn {
 	isLoadingMore: boolean;
 	/** Whether there are more pages to load */
 	hasMore: boolean;
-	/** Current error message, or null if no error */
+	/** Current error message, or null if no error (auto-clears on successful refetch) */
 	searchError: string | null;
-	/** Clear the current search error */
-	clearSearchError: () => void;
 	/** Refetch the history data */
 	refetchHistory: () => Promise<void>;
 	/** Load the next page of results */
@@ -54,11 +52,8 @@ export function useHistorySearch(): UseHistorySearchReturn {
 	const filteredHistory = flattenHistoryPages(data?.pages);
 
 	// Convert error to string for display
+	// Note: TanStack Query automatically clears errors on successful refetch
 	const searchError = error ? String(error.message || error) : null;
-
-	const clearSearchError = useCallback(() => {
-		// Errors are managed by TanStack Query, this is a no-op for compatibility
-	}, []);
 
 	/**
 	 * Refetch the history data
@@ -85,7 +80,6 @@ export function useHistorySearch(): UseHistorySearchReturn {
 		isLoadingMore: isFetchingNextPage,
 		hasMore: hasNextPage ?? false,
 		searchError,
-		clearSearchError,
 		refetchHistory,
 		loadMore,
 	};
