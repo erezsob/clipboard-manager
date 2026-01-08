@@ -12,6 +12,7 @@ dist
 dist-ssr
 electron-dist
 electron/preload.js
+release
 *.local
 
 # Editor directories and files

@@ -1,0 +1,35 @@
+appId: com.erezsobel.clipboard-manager
+productName: Clipboard Manager
+copyright: Copyright © 2026 Erez Sobel
+
+mac:
+  category: public.app-category.utilities
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  darkModeSupport: true
+
+dmg:
+  title: Clipboard Manager
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - electron-dist/**/*
+  - "!node_modules/**/*"
+  - node_modules/better-sqlite3/**/*
+
+extraMetadata:
+  main: electron-dist/main.js
