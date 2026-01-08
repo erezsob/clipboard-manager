@@ -22,6 +22,10 @@
 - Error handling with retry logic (exponential backoff)
 - Modular component architecture (`src/components/`)
 - Custom hooks for separation of concerns (`src/hooks/`)
+- TanStack Query for data fetching and caching (`@tanstack/react-query`)
+- Optimistic updates for delete and favorite operations
+- Automatic refetching on window focus
+- Query key factory for consistent cache management
 
 ## 🔨 Needs Implementation
 
@@ -83,17 +87,17 @@
    - ✅ Improved testability through component isolation
    - ✅ Reusable components for future features
 
-### Phase 5: TanStack Query Integration (Priority: Medium)
-1. 🔨 Install and configure `@tanstack/react-query`
-2. 🔨 Set up `QueryClientProvider` in app root
-3. 🔨 Convert history fetching to `useQuery` hooks
-4. 🔨 Convert mutations to `useMutation` hooks (add, delete, favorite, clear)
-5. 🔨 Implement query key factory for consistent cache management
-6. 🔨 Add optimistic updates for delete and favorite operations
-7. 🔨 Configure cache and stale time settings
-8. 🔨 Remove manual state management from `useClipboard` hook
-9. 🔨 Add automatic refetching on window focus
-10. 🔨 Test cache invalidation and refetching behavior
+### Phase 5: TanStack Query Integration (Priority: Medium) ✅
+1. ✅ Install and configure `@tanstack/react-query`
+2. ✅ Set up `QueryClientProvider` in app root
+3. ✅ Convert history fetching to `useInfiniteQuery` hooks
+4. ✅ Convert mutations to `useMutation` hooks (delete, favorite, clear)
+5. ✅ Implement query key factory for consistent cache management (`src/lib/queryKeys.ts`)
+6. ✅ Add optimistic updates for delete and favorite operations
+7. ✅ Configure cache and stale time settings
+8. ✅ Remove manual state management (deleted `useClipboard`, `usePagination`, `usePrevious` hooks)
+9. ✅ Add automatic refetching on window focus
+10. ✅ Create `useClipboardMonitor` hook for clipboard polling with query invalidation
 
 ### Phase 6: Persisted Snippets Management (Priority: Medium)
 1. 🔨 Database migration: Create `snippets` table with indexes

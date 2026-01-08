@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ErrorBanner, Footer, SearchBar } from "./components/common";
 import { HistoryList } from "./components/history";
-import { useClipboard } from "./hooks/useClipboard";
+import { useClipboardMonitor } from "./hooks/queries";
 import { useHistoryActions } from "./hooks/useHistoryActions";
 import { useHistorySearch } from "./hooks/useHistorySearch";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
@@ -12,8 +12,10 @@ import type { HistoryItem } from "./lib/db";
  * Main application component for clipboard manager
  * Handles UI composition, search, pagination, and clipboard operations
  */
-export default function App() {
-	const { history, refreshHistory } = useClipboard();
+export function App() {
+	// Start clipboard monitoring (polls and adds new clips)
+	useClipboardMonitor();
+
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
@@ -42,12 +44,9 @@ export default function App() {
 		hasMore,
 		searchError,
 		clearSearchError,
-		refreshFilteredHistory,
+		refetchHistory,
 		loadMore,
-		resetPagination,
-	} = useHistorySearch({
-		history,
-	});
+	} = useHistorySearch();
 
 	// Callback to hide window and reset search state
 	const hideWindow = useCallback(async () => {
@@ -95,9 +94,6 @@ export default function App() {
 		handleDeleteItem,
 		handleClearAll,
 	} = useHistoryActions({
-		refreshHistory,
-		refreshFilteredHistory,
-		resetPagination,
 		filteredHistory,
 		selectedIndex,
 		setSelectedIndex,
@@ -112,12 +108,11 @@ export default function App() {
 	}, [clearSearchError, setActionError]);
 
 	// Set up the refresh callback for when window becomes visible
-	// This needs to be after useHistorySearch so we have access to refreshFilteredHistory
+	// This needs to be after useHistorySearch so we have access to refetchHistory
 	refreshOnVisibleRef.current = useCallback(async () => {
-		await refreshHistory();
-		await refreshFilteredHistory();
+		await refetchHistory();
 		setSelectedIndex(0);
-	}, [refreshHistory, refreshFilteredHistory, setSelectedIndex]);
+	}, [refetchHistory, setSelectedIndex]);
 
 	// Reset selected index when search or filter changes
 	const searchFilterKey = useMemo(

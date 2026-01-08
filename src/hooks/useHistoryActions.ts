@@ -1,19 +1,13 @@
 import { useCallback, useState } from "react";
-import {
-	clearAllHistory,
-	deleteHistoryItem,
-	type HistoryItem,
-	toggleFavorite,
-} from "../lib/db";
+import type { HistoryItem } from "../lib/db";
 import { retryOperation } from "../lib/utils";
+import {
+	useClearHistoryMutation,
+	useDeleteItemMutation,
+	useToggleFavoriteMutation,
+} from "./queries";
 
 interface UseHistoryActionsOptions {
-	/** Function to refresh the main history from useClipboard */
-	refreshHistory: () => Promise<void>;
-	/** Function to refresh filtered/searched history from useHistorySearch */
-	refreshFilteredHistory: () => Promise<void>;
-	/** Function to reset pagination state */
-	resetPagination: () => void;
 	/** Current filtered history array for index calculations */
 	filteredHistory: HistoryItem[];
 	/** Current selected index for adjustments after delete */
@@ -41,20 +35,23 @@ interface UseHistoryActionsReturn {
 
 /**
  * Hook that manages history item actions (copy, delete, favorite, clear)
- * Encapsulates all item-related operations with error handling
+ * Uses TanStack Query mutations for data operations with optimistic updates
+ *
  * @param options - Configuration options for the hook
  * @returns Action handlers and error state
  */
 export function useHistoryActions({
-	refreshHistory,
-	refreshFilteredHistory,
-	resetPagination,
 	filteredHistory,
 	selectedIndex,
 	setSelectedIndex,
 	onHideWindow,
 }: UseHistoryActionsOptions): UseHistoryActionsReturn {
 	const [error, setError] = useState<string | null>(null);
+
+	// TanStack Query mutations
+	const deleteItemMutation = useDeleteItemMutation();
+	const toggleFavoriteMutation = useToggleFavoriteMutation();
+	const clearHistoryMutation = useClearHistoryMutation();
 
 	/**
 	 * Handles errors consistently across actions
@@ -96,14 +93,12 @@ export function useHistoryActions({
 			e.stopPropagation();
 			try {
 				setError(null);
-				await toggleFavorite(itemId);
-				await refreshHistory();
-				await refreshFilteredHistory();
+				await toggleFavoriteMutation.mutateAsync(itemId);
 			} catch (err) {
 				handleError(err, "Failed to toggle favorite");
 			}
 		},
-		[handleError, refreshHistory, refreshFilteredHistory],
+		[handleError, toggleFavoriteMutation],
 	);
 
 	/**
@@ -114,9 +109,7 @@ export function useHistoryActions({
 			e.stopPropagation();
 			try {
 				setError(null);
-				await deleteHistoryItem(itemId);
-				await refreshHistory();
-				await refreshFilteredHistory();
+				await deleteItemMutation.mutateAsync(itemId);
 				// Adjust selected index if deleted item was at the end
 				if (selectedIndex >= filteredHistory.length - 1) {
 					setSelectedIndex(Math.max(0, filteredHistory.length - 2));
@@ -127,8 +120,7 @@ export function useHistoryActions({
 		},
 		[
 			handleError,
-			refreshHistory,
-			refreshFilteredHistory,
+			deleteItemMutation,
 			selectedIndex,
 			filteredHistory.length,
 			setSelectedIndex,
@@ -147,16 +139,14 @@ export function useHistoryActions({
 
 		try {
 			setError(null);
-			await clearAllHistory();
-			await refreshHistory();
-			resetPagination();
+			await clearHistoryMutation.mutateAsync();
 			setSelectedIndex(0);
 			return true;
 		} catch (err) {
 			handleError(err, "Failed to clear history");
 			return false;
 		}
-	}, [handleError, refreshHistory, resetPagination, setSelectedIndex]);
+	}, [handleError, clearHistoryMutation, setSelectedIndex]);
 
 	return {
 		error,

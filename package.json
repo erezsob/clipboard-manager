@@ -22,6 +22,7 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
+		"@tanstack/react-query": "^5.90.16",
 		"better-sqlite3": "^12.5.0",
 		"date-fns": "^4.1.0",
 		"lucide-react": "^0.562.0",
