@@ -11,7 +11,7 @@ import { useWindowVisibility } from "./hooks/useWindowVisibility";
  * Main application component for clipboard manager
  * Handles UI composition, search, pagination, and clipboard operations
  */
-function App() {
+export default function App() {
 	const { history, refreshHistory } = useClipboard();
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
@@ -187,5 +187,3 @@ function App() {
 		</div>
 	);
 }
-
-export default App;
