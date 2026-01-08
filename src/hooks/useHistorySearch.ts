@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { HistoryItem } from "../lib/db";
 import { usePagination } from "./usePagination";
 import { usePrevious } from "./usePrevious";
@@ -6,8 +6,23 @@ import { usePrevious } from "./usePrevious";
 interface UseHistorySearchOptions {
 	/** The full history array from useClipboard */
 	history: HistoryItem[];
-	/** Optional callback for search errors */
-	onSearchError?: (error: string) => void;
+}
+
+interface UseHistorySearchReturn {
+	searchQuery: string;
+	setSearchQuery: (query: string) => void;
+	favoritesOnly: boolean;
+	setFavoritesOnly: (value: boolean) => void;
+	filteredHistory: HistoryItem[];
+	isLoadingMore: boolean;
+	hasMore: boolean;
+	/** Current search error, or null if no error */
+	searchError: string | null;
+	/** Clear the current search error */
+	clearSearchError: () => void;
+	refreshFilteredHistory: () => Promise<void>;
+	loadMore: () => Promise<void>;
+	resetPagination: () => void;
 }
 
 /**
@@ -17,12 +32,15 @@ interface UseHistorySearchOptions {
  */
 export function useHistorySearch({
 	history,
-	onSearchError,
-}: UseHistorySearchOptions) {
+}: UseHistorySearchOptions): UseHistorySearchReturn {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
+	const [searchError, setSearchError] = useState<string | null>(null);
 	const prevSearchQuery = usePrevious(searchQuery);
 	const prevFavoritesOnly = usePrevious(favoritesOnly);
+
+	// Track if we've already triggered refresh for current search/filter values
+	const lastRefreshedKey = useRef<string>("");
 
 	// Pagination hook manages filtered history and pagination state
 	const {
@@ -38,23 +56,28 @@ export function useHistorySearch({
 		history,
 	});
 
-	// Refresh filtered history when search, filter, or history changes
-	// Only reset pagination when search or filter changes (not when history changes)
+	// Refresh filtered history when search or filter changes
+	// Uses a ref to track refreshed state and avoid infinite loops
 	useEffect(() => {
+		const currentKey = `${searchQuery}|${favoritesOnly}`;
 		const searchOrFilterChanged =
 			prevSearchQuery !== searchQuery || prevFavoritesOnly !== favoritesOnly;
 
+		// Only refresh if search/filter actually changed and we haven't already refreshed
+		if (!searchOrFilterChanged || lastRefreshedKey.current === currentKey) {
+			return;
+		}
+
+		lastRefreshedKey.current = currentKey;
+
 		const refresh = async () => {
 			try {
-				if (searchOrFilterChanged) {
-					resetPagination();
-				}
+				setSearchError(null);
+				resetPagination();
 				await refreshFilteredHistory();
 			} catch (error) {
 				console.error("Failed to refresh history:", error);
-				if (searchOrFilterChanged) {
-					onSearchError?.("Failed to search history. Please try again.");
-				}
+				setSearchError("Failed to search history. Please try again.");
 			}
 		};
 
@@ -66,8 +89,11 @@ export function useHistorySearch({
 		prevFavoritesOnly,
 		resetPagination,
 		refreshFilteredHistory,
-		onSearchError,
 	]);
+
+	const clearSearchError = useCallback(() => {
+		setSearchError(null);
+	}, []);
 
 	return {
 		searchQuery,
@@ -77,6 +103,8 @@ export function useHistorySearch({
 		filteredHistory,
 		isLoadingMore,
 		hasMore,
+		searchError,
+		clearSearchError,
 		refreshFilteredHistory,
 		loadMore,
 		resetPagination,

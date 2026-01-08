@@ -6,6 +6,7 @@ import { useHistoryActions } from "./hooks/useHistoryActions";
 import { useHistorySearch } from "./hooks/useHistorySearch";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useWindowVisibility } from "./hooks/useWindowVisibility";
+import type { HistoryItem } from "./lib/db";
 
 /**
  * Main application component for clipboard manager
@@ -30,12 +31,13 @@ export default function App() {
 		filteredHistory,
 		isLoadingMore,
 		hasMore,
+		searchError,
+		clearSearchError,
 		refreshFilteredHistory,
 		loadMore,
 		resetPagination,
 	} = useHistorySearch({
 		history,
-		onSearchError: (err) => setError(err),
 	});
 
 	// Callback to hide window and reset search state
@@ -47,29 +49,38 @@ export default function App() {
 		setSearchQuery("");
 	}, [setIsVisible, setSearchQuery]);
 
-	// Keyboard navigation hook manages keyboard shortcuts and selected index
-	const { selectedIndex, setSelectedIndex } = useKeyboardNavigation({
-		isVisible,
-		filteredHistory,
-		onEscape: hideWindow,
-		onEnter: async (item) => {
+	// Stable callback for copying item and hiding window (used by keyboard navigation)
+	const handleEnterKey = useCallback(
+		async (item: HistoryItem) => {
 			if (window.electronAPI) {
 				await window.electronAPI.clipboard.writeText(item.content);
 			}
 			await hideWindow();
 		},
-		onScrollToIndex: (index) => {
-			itemRefs.current[index]?.scrollIntoView({
-				block: "nearest",
-				behavior: "smooth",
-			});
-		},
+		[hideWindow],
+	);
+
+	// Stable callback for scrolling to item
+	const handleScrollToIndex = useCallback((index: number) => {
+		itemRefs.current[index]?.scrollIntoView({
+			block: "nearest",
+			behavior: "smooth",
+		});
+	}, []);
+
+	// Keyboard navigation hook manages keyboard shortcuts and selected index
+	const { selectedIndex, setSelectedIndex } = useKeyboardNavigation({
+		isVisible,
+		filteredHistory,
+		onEscape: hideWindow,
+		onEnter: handleEnterKey,
+		onScrollToIndex: handleScrollToIndex,
 	});
 
 	// History actions hook manages item operations (copy, delete, favorite, clear)
 	const {
-		error,
-		setError,
+		error: actionError,
+		setError: setActionError,
 		handleItemClick,
 		handleToggleFavorite,
 		handleDeleteItem,
@@ -83,6 +94,13 @@ export default function App() {
 		setSelectedIndex,
 		onHideWindow: hideWindow,
 	});
+
+	// Combine errors from search and actions
+	const error = searchError || actionError;
+	const clearError = useCallback(() => {
+		clearSearchError();
+		setActionError(null);
+	}, [clearSearchError, setActionError]);
 
 	// Reset selected index when search or filter changes
 	const searchFilterKey = useMemo(
@@ -119,14 +137,14 @@ export default function App() {
 	 */
 	const handleLoadMore = useCallback(async () => {
 		try {
-			setError(null);
+			setActionError(null);
 			await loadMore();
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
-			setError(`Failed to load more items: ${message}`);
+			setActionError(`Failed to load more items: ${message}`);
 			console.error("Failed to load more items", err);
 		}
-	}, [setError, loadMore]);
+	}, [setActionError, loadMore]);
 
 	/**
 	 * Handles clear all from settings menu (closes menu first)
@@ -149,9 +167,7 @@ export default function App() {
 	return (
 		<div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
 			{/* Error Message */}
-			{error && (
-				<ErrorBanner message={error} onDismiss={() => setError(null)} />
-			)}
+			{error && <ErrorBanner message={error} onDismiss={clearError} />}
 
 			{/* Search Bar */}
 			<SearchBar
