@@ -253,7 +253,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Reduced boilerplate code
 - Implementation:
   - Wrap app with `QueryClientProvider`
-  - Convert `getHistory()`, `searchHistory()` to `useQuery` hooks
+  - Convert `getHistory()`, to `useQuery` hooks
   - Convert mutations (`addClip`, `deleteHistoryItem`, etc.) to `useMutation` hooks
   - Implement query keys for proper cache management
   - Add optimistic updates for delete/favorite operations
@@ -279,7 +279,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### 5.8 Automated Testing Suite
 - **Testing Framework**: Vitest (unit/integration) + React Testing Library (components) + Playwright (E2E)
 - **Unit Tests**:
-  - Database functions (`addClip`, `getHistory`, `searchHistory`, `deleteHistoryItem`, etc.)
+  - Database functions (`addClip`, `getHistory`, `deleteHistoryItem`, etc.)
   - Utility functions (whitespace normalization, duplicate detection)
   - Data transformation and validation logic
 - **Integration Tests**:

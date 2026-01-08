@@ -188,7 +188,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 ### Automated Testing Suite
 - **Testing Framework**: Vitest (unit/integration) + React Testing Library (components) + Playwright (E2E)
 - **Unit Tests**:
-  - Database functions (`addClip`, `getHistory`, `searchHistory`, `deleteHistoryItem`, etc.)
+  - Database functions (`addClip`, `getHistory`, `deleteHistoryItem`, etc.)
   - Utility functions (whitespace normalization, duplicate detection)
   - Data transformation and validation logic
 - **Integration Tests**:

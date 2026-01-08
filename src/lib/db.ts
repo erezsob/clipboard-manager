@@ -21,6 +21,7 @@ export async function addClip(text: string) {
 }
 
 export interface GetHistoryOptions {
+	query?: string;
 	limit?: number;
 	favoritesOnly?: boolean;
 	offset?: number;
@@ -30,27 +31,9 @@ export interface GetHistoryOptions {
  * Get history items with pagination support
  */
 export async function getHistory(options: GetHistoryOptions = {}) {
-	const { limit = 50, favoritesOnly = false, offset = 0 } = options;
-	await waitForElectronAPI();
-	return window.electronAPI.db.getHistory(limit, favoritesOnly, offset);
-}
-
-export interface SearchHistoryOptions extends GetHistoryOptions {
-	query: string;
-}
-
-/**
- * Search history by content with pagination support
- */
-export async function searchHistory(options: SearchHistoryOptions) {
 	const { query, limit = 50, favoritesOnly = false, offset = 0 } = options;
 	await waitForElectronAPI();
-	return window.electronAPI.db.searchHistory(
-		query,
-		limit,
-		favoritesOnly,
-		offset,
-	);
+	return window.electronAPI.db.getHistory(query, limit, favoritesOnly, offset);
 }
 
 /**

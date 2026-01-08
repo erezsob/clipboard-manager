@@ -7,6 +7,7 @@ interface ElectronAPI {
 	};
 	db: {
 		getHistory: (
+			query?: string,
 			limit?: number,
 			favoritesOnly?: boolean,
 			offset?: number,
@@ -20,20 +21,6 @@ interface ElectronAPI {
 			}>
 		>;
 		addClip: (text: string) => Promise<void>;
-		searchHistory: (
-			query: string,
-			limit?: number,
-			favoritesOnly?: boolean,
-			offset?: number,
-		) => Promise<
-			Array<{
-				id: number;
-				content: string;
-				type: string;
-				created_at: string;
-				is_favorite: number;
-			}>
-		>;
 		deleteHistoryItem: (id: number) => Promise<void>;
 		clearAllHistory: () => Promise<void>;
 		toggleFavorite: (id: number) => Promise<boolean>;

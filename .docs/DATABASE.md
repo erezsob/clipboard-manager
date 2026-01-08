@@ -84,7 +84,6 @@ CREATE INDEX IF NOT EXISTS idx_snippets_last_used ON snippets(last_used_at);
 ### Key Operations
 - `getHistory()` - Fetch clipboard history with pagination
 - `addClip()` - Add new clipboard item (with duplicate detection)
-- `searchHistory()` - Search history by content
 - `deleteHistoryItem()` - Delete specific item
 - `clearAllHistory()` - Clear all history
 - `toggleFavorite()` - Toggle favorite status

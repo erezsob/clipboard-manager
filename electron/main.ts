@@ -209,14 +209,41 @@ ipcMain.handle(
 	"db:getHistory",
 	(
 		_event,
-		limit: number = 50,
-		favoritesOnly: boolean = false,
-		offset: number = 0,
+		options: {
+			query?: string;
+			limit?: number;
+			favoritesOnly?: boolean;
+			offset?: number;
+		},
 	) => {
 		if (!db) throw new Error("Database not initialized");
-		const query = `SELECT id, content, type, created_at, is_favorite FROM history ${favoritesOnly ? "WHERE is_favorite = 1" : ""} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-		const stmt = db.prepare(query);
-		return stmt.all(limit, offset);
+
+		const {
+			query = "",
+			limit = 50,
+			favoritesOnly = false,
+			offset = 0,
+		} = options;
+		const conditions: string[] = [];
+		const params: (string | number)[] = [];
+
+		if (query.trim()) {
+			conditions.push("content LIKE ?");
+			params.push(`%${query}%`);
+		}
+
+		if (favoritesOnly) {
+			conditions.push("is_favorite = 1");
+		}
+
+		const sql = `
+			SELECT id, content, type, created_at, is_favorite FROM history${
+				conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : ""
+			} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+
+		params.push(limit, offset);
+
+		return db.prepare(sql).all(...params);
 	},
 );
 
@@ -247,27 +274,6 @@ ipcMain.handle("db:addClip", (_event, text: string) => {
 	const stmt = db.prepare("INSERT INTO history (content, type) VALUES (?, ?)");
 	stmt.run(text, "text");
 });
-
-ipcMain.handle(
-	"db:searchHistory",
-	(
-		_event,
-		query: string,
-		limit: number = 50,
-		favoritesOnly: boolean = false,
-		offset: number = 0,
-	) => {
-		if (!db) throw new Error("Database not initialized");
-		let sql =
-			"SELECT id, content, type, created_at, is_favorite FROM history WHERE content LIKE ?";
-		if (favoritesOnly) {
-			sql += " AND is_favorite = 1";
-		}
-		sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
-		const stmt = db.prepare(sql);
-		return stmt.all(`%${query}%`, limit, offset);
-	},
-);
 
 ipcMain.handle("db:deleteHistoryItem", (_event, id: number) => {
 	if (!db) throw new Error("Database not initialized");

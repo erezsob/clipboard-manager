@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { INITIAL_LOAD_COUNT, PAGINATION_BATCH_SIZE } from "../../lib/constants";
-import { getHistory, type HistoryItem, searchHistory } from "../../lib/db";
+import { getHistory, type HistoryItem } from "../../lib/db";
 import { type HistoryQueryFilters, historyKeys } from "../../lib/queryKeys";
 import { hasMoreItems } from "../../lib/utils";
 import type { HistoryPage } from "./types";
@@ -31,22 +31,13 @@ async function fetchHistoryPage({
 	limit,
 }: FetchHistoryPageOptions): Promise<HistoryPage> {
 	const { searchQuery, favoritesOnly } = filters;
-	const trimmedQuery = searchQuery.trim();
 
-	let items: HistoryItem[];
-
-	if (trimmedQuery === "") {
-		// Simple history fetch without search.
-		items = await getHistory({ limit, offset, favoritesOnly });
-	} else {
-		// Search or favorites filter applied
-		items = await searchHistory({
-			query: trimmedQuery,
-			limit,
-			favoritesOnly,
-			offset,
-		});
-	}
+	const items = await getHistory({
+		limit,
+		offset,
+		query: searchQuery.trim(),
+		favoritesOnly,
+	});
 
 	// Determine if there are more items to load
 	const hasMore = hasMoreItems(items.length, limit);
