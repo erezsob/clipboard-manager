@@ -25,6 +25,7 @@ export function useWindowVisibility(
 				const visible = await window.electronAPI.window.isVisible();
 				setIsVisible(visible);
 				if (visible) {
+					clearInterval(interval);
 					// Focus search input when window becomes visible
 					setTimeout(() => {
 						searchInputRef.current?.focus();

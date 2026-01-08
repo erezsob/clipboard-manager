@@ -71,10 +71,9 @@ export function usePagination({
 	 */
 	const refreshFilteredHistory = useCallback(async () => {
 		try {
-			const currentLoadedCount = loadedCount;
-			const results = await loadFilteredHistory(currentLoadedCount, 0);
+			const results = await loadFilteredHistory(loadedCount, 0);
 			setFilteredHistory(results);
-			setHasMore(hasMoreItems(results.length, currentLoadedCount));
+			setHasMore(hasMoreItems(results.length, loadedCount));
 		} catch (error) {
 			console.error("Failed to refresh filtered history:", error);
 			throw error;

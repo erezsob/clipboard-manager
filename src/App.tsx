@@ -1,7 +1,8 @@
 import { Copy, Search, Settings, Star, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClipboard } from "./hooks/useClipboard";
-import { usePagination } from "./hooks/usePagination";
+import { useHistorySearch } from "./hooks/useHistorySearch";
+import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useWindowVisibility } from "./hooks/useWindowVisibility";
 import {
 	clearAllHistory,
@@ -17,133 +18,69 @@ import { formatDate, retryOperation, truncateText } from "./lib/utils";
  */
 function App() {
 	const { history, refreshHistory } = useClipboard();
-	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [error, setError] = useState<string | null>(null);
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
-	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
+	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-	// Pagination hook manages filtered history and pagination state
+	// Window visibility hook manages visibility state and focus handling
+	const { isVisible, setIsVisible } = useWindowVisibility(searchInputRef);
+
+	// History search hook manages search query, favorites filter, and filtered history
 	const {
+		searchQuery,
+		setSearchQuery,
+		favoritesOnly,
+		setFavoritesOnly,
 		filteredHistory,
 		isLoadingMore,
 		hasMore,
 		refreshFilteredHistory,
 		loadMore,
 		resetPagination,
-	} = usePagination({
-		searchQuery,
-		favoritesOnly,
+	} = useHistorySearch({
 		history,
+		onSearchError: setError,
 	});
 
-	// Window visibility hook manages visibility state and focus handling
-	const { isVisible, setIsVisible } = useWindowVisibility(searchInputRef);
-
-	// Reset pagination and refresh filtered history when search or filter changes
-	useEffect(() => {
-		const performSearch = async () => {
-			try {
-				resetPagination();
-				await refreshFilteredHistory();
-				setSelectedIndex(0);
-			} catch (error) {
-				console.error("Failed to perform search:", error);
-				setError("Failed to search history. Please try again.");
+	// Keyboard navigation hook manages keyboard shortcuts and selected index
+	const { selectedIndex, setSelectedIndex } = useKeyboardNavigation({
+		isVisible,
+		filteredHistory,
+		onEscape: async () => {
+			if (window.electronAPI) {
+				await window.electronAPI.window.hide();
 			}
-		};
-
-		performSearch();
-		// refreshFilteredHistory already depends on searchQuery and favoritesOnly via loadFilteredHistory
-		// so it will change when those values change, triggering this effect
-	}, [resetPagination, refreshFilteredHistory]);
-
-	// Refresh filtered history when underlying history changes (preserves pagination)
-	useEffect(() => {
-		const updateHistory = async () => {
-			try {
-				await refreshFilteredHistory();
-			} catch (error) {
-				console.error("Failed to update filtered history:", error);
-			}
-		};
-
-		updateHistory();
-		// refreshFilteredHistory already depends on history via loadFilteredHistory
-		// so it will change when history changes, triggering this effect
-	}, [refreshFilteredHistory]);
-
-	// Keyboard handlers
-	const handleKeyDown = useCallback(
-		async (e: KeyboardEvent) => {
-			if (!isVisible) return;
-
-			// Escape: Hide window
-			if (e.key === "Escape") {
-				if (window.electronAPI) {
-					await window.electronAPI.window.hide();
-				}
-				setIsVisible(false);
-				setSearchQuery("");
-				setSelectedIndex(0);
-				return;
-			}
-
-			// Enter: Copy selected item and hide
-			if (e.key === "Enter" && filteredHistory.length > 0) {
-				const selectedItem = filteredHistory[selectedIndex];
-				if (selectedItem && window.electronAPI) {
-					await window.electronAPI.clipboard.writeText(selectedItem.content);
-					await window.electronAPI.window.hide();
-					setIsVisible(false);
-					setSearchQuery("");
-					setSelectedIndex(0);
-				}
-				return;
-			}
-
-			// Arrow Up: Navigate up
-			if (e.key === "ArrowUp") {
-				e.preventDefault();
-				setSelectedIndex((prev) => {
-					const newIndex = prev > 0 ? prev - 1 : filteredHistory.length - 1;
-					// Scroll into view
-					setTimeout(() => {
-						const element = document.getElementById(`history-item-${newIndex}`);
-						element?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-					}, 0);
-					return newIndex;
-				});
-				return;
-			}
-
-			// Arrow Down: Navigate down
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				setSelectedIndex((prev) => {
-					const newIndex = prev < filteredHistory.length - 1 ? prev + 1 : 0;
-					// Scroll into view
-					setTimeout(() => {
-						const element = document.getElementById(`history-item-${newIndex}`);
-						element?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-					}, 0);
-					return newIndex;
-				});
-				return;
-			}
+			setIsVisible(false);
+			setSearchQuery("");
 		},
-		[isVisible, filteredHistory, selectedIndex, setIsVisible],
-	);
+		onEnter: async (item) => {
+			if (window.electronAPI) {
+				await window.electronAPI.clipboard.writeText(item.content);
+				await window.electronAPI.window.hide();
+			}
+			setIsVisible(false);
+			setSearchQuery("");
+		},
+		onScrollToIndex: (index) => {
+			itemRefs.current[index]?.scrollIntoView({
+				block: "nearest",
+				behavior: "smooth",
+			});
+		},
+	});
 
-	// Register keyboard event listener
+	// Reset selected index when search or filter changes
+	// Use a memoized key that changes when search/filter changes
+	const searchFilterKey = useMemo(
+		() => `${searchQuery}-${favoritesOnly}`,
+		[searchQuery, favoritesOnly],
+	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: searchFilterKey is intentionally used to trigger reset when search/filter changes
 	useEffect(() => {
-		window.addEventListener("keydown", handleKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleKeyDown);
-		};
-	}, [handleKeyDown]);
+		setSelectedIndex(0);
+	}, [searchFilterKey, setSelectedIndex]);
 
 	// Close settings menu when clicking outside
 	useEffect(() => {
@@ -196,7 +133,7 @@ function App() {
 				handleError(error, "Failed to copy to clipboard");
 			}
 		},
-		[handleError, setIsVisible],
+		[handleError, setIsVisible, setSearchQuery, setSelectedIndex],
 	);
 
 	/**
@@ -242,6 +179,7 @@ function App() {
 			refreshFilteredHistory,
 			selectedIndex,
 			filteredHistory.length,
+			setSelectedIndex,
 		],
 	);
 
@@ -264,7 +202,7 @@ function App() {
 		} catch (error) {
 			handleError(error, "Failed to clear history");
 		}
-	}, [handleError, refreshHistory, resetPagination]);
+	}, [handleError, refreshHistory, resetPagination, setSelectedIndex]);
 
 	/**
 	 * Handles loading more items for pagination
@@ -366,7 +304,9 @@ function App() {
 							// biome-ignore lint/a11y/useSemanticElements: Need div with role="button" to allow nested buttons (Copy/Delete)
 							<div
 								key={item.id}
-								id={`history-item-${index}`}
+								ref={(el) => {
+									itemRefs.current[index] = el;
+								}}
 								onClick={() => handleItemClick(item)}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" || e.key === " ") {
