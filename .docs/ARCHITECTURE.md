@@ -34,10 +34,24 @@ mac-clipboard-manager/
 │       └── 002_add_favorites.sql
 ├── electron-dist/       # Compiled Electron files
 ├── src/                 # React application source
-│   ├── App.tsx          # Main application component
+│   ├── App.tsx          # Main application component (composition layer)
+│   ├── components/      # React components
+│   │   ├── common/      # Shared UI components
+│   │   │   ├── ErrorBanner.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── SearchBar.tsx
+│   │   │   └── SettingsMenu.tsx
+│   │   └── history/     # History-specific components
+│   │       ├── HistoryItem.tsx
+│   │       └── HistoryList.tsx
 │   ├── hooks/           # React hooks
-│   │   ├── useClipboard.ts  # Clipboard monitoring hook
-│   │   └── usePagination.ts # Pagination logic
+│   │   ├── useClipboard.ts        # Clipboard monitoring
+│   │   ├── useHistoryActions.ts   # Item actions (copy, delete, favorite)
+│   │   ├── useHistorySearch.ts    # Search and filter state
+│   │   ├── useKeyboardNavigation.ts # Keyboard shortcuts
+│   │   ├── usePagination.ts       # Pagination logic
+│   │   ├── usePrevious.ts         # Previous value tracking
+│   │   └── useWindowVisibility.ts # Window visibility state
 │   ├── lib/             # Utility libraries
 │   │   ├── constants.ts # Application constants
 │   │   ├── db.ts        # Database operations

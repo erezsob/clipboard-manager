@@ -1,24 +1,18 @@
-import { Copy, Search, Settings, Star, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ErrorBanner, Footer, SearchBar } from "./components/common";
+import { HistoryList } from "./components/history";
 import { useClipboard } from "./hooks/useClipboard";
+import { useHistoryActions } from "./hooks/useHistoryActions";
 import { useHistorySearch } from "./hooks/useHistorySearch";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useWindowVisibility } from "./hooks/useWindowVisibility";
-import {
-	clearAllHistory,
-	deleteHistoryItem,
-	type HistoryItem,
-	toggleFavorite,
-} from "./lib/db";
-import { formatDate, retryOperation, truncateText } from "./lib/utils";
 
 /**
  * Main application component for clipboard manager
- * Handles UI, search, pagination, and clipboard operations
+ * Handles UI composition, search, pagination, and clipboard operations
  */
 function App() {
 	const { history, refreshHistory } = useClipboard();
-	const [error, setError] = useState<string | null>(null);
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
@@ -41,27 +35,28 @@ function App() {
 		resetPagination,
 	} = useHistorySearch({
 		history,
-		onSearchError: setError,
+		onSearchError: (err) => setError(err),
 	});
+
+	// Callback to hide window and reset search state
+	const hideWindow = useCallback(async () => {
+		if (window.electronAPI) {
+			await window.electronAPI.window.hide();
+		}
+		setIsVisible(false);
+		setSearchQuery("");
+	}, [setIsVisible, setSearchQuery]);
 
 	// Keyboard navigation hook manages keyboard shortcuts and selected index
 	const { selectedIndex, setSelectedIndex } = useKeyboardNavigation({
 		isVisible,
 		filteredHistory,
-		onEscape: async () => {
-			if (window.electronAPI) {
-				await window.electronAPI.window.hide();
-			}
-			setIsVisible(false);
-			setSearchQuery("");
-		},
+		onEscape: hideWindow,
 		onEnter: async (item) => {
 			if (window.electronAPI) {
 				await window.electronAPI.clipboard.writeText(item.content);
-				await window.electronAPI.window.hide();
 			}
-			setIsVisible(false);
-			setSearchQuery("");
+			await hideWindow();
 		},
 		onScrollToIndex: (index) => {
 			itemRefs.current[index]?.scrollIntoView({
@@ -71,8 +66,25 @@ function App() {
 		},
 	});
 
+	// History actions hook manages item operations (copy, delete, favorite, clear)
+	const {
+		error,
+		setError,
+		handleItemClick,
+		handleToggleFavorite,
+		handleDeleteItem,
+		handleClearAll,
+	} = useHistoryActions({
+		refreshHistory,
+		refreshFilteredHistory,
+		resetPagination,
+		filteredHistory,
+		selectedIndex,
+		setSelectedIndex,
+		onHideWindow: hideWindow,
+	});
+
 	// Reset selected index when search or filter changes
-	// Use a memoized key that changes when search/filter changes
 	const searchFilterKey = useMemo(
 		() => `${searchQuery}-${favoritesOnly}`,
 		[searchQuery, favoritesOnly],
@@ -103,118 +115,26 @@ function App() {
 	}, [isSettingsMenuOpen]);
 
 	/**
-	 * Handles errors consistently across the application
-	 */
-	const handleError = useCallback((error: unknown, defaultMessage: string) => {
-		const message = error instanceof Error ? error.message : String(error);
-		setError(`${defaultMessage}: ${message}`);
-		console.error(defaultMessage, error);
-	}, []);
-
-	/**
-	 * Handles clicking on a history item to copy it to clipboard
-	 */
-	const handleItemClick = useCallback(
-		async (item: HistoryItem) => {
-			if (!window.electronAPI) return;
-
-			try {
-				setError(null);
-				await retryOperation({
-					operation: async () => {
-						await window.electronAPI.clipboard.writeText(item.content);
-					},
-				});
-				await window.electronAPI.window.hide();
-				setIsVisible(false);
-				setSearchQuery("");
-				setSelectedIndex(0);
-			} catch (error) {
-				handleError(error, "Failed to copy to clipboard");
-			}
-		},
-		[handleError, setIsVisible, setSearchQuery, setSelectedIndex],
-	);
-
-	/**
-	 * Handles toggling favorite status of a history item
-	 */
-	const handleToggleFavorite = useCallback(
-		async (e: React.MouseEvent, itemId: number) => {
-			e.stopPropagation();
-			try {
-				setError(null);
-				await toggleFavorite(itemId);
-				await refreshHistory();
-				await refreshFilteredHistory();
-			} catch (error) {
-				handleError(error, "Failed to toggle favorite");
-			}
-		},
-		[handleError, refreshHistory, refreshFilteredHistory],
-	);
-
-	/**
-	 * Handles deleting a history item
-	 */
-	const handleDeleteItem = useCallback(
-		async (e: React.MouseEvent, itemId: number) => {
-			e.stopPropagation();
-			try {
-				setError(null);
-				await deleteHistoryItem(itemId);
-				await refreshHistory();
-				await refreshFilteredHistory();
-				// Adjust selected index if deleted item was at the end
-				if (selectedIndex >= filteredHistory.length - 1) {
-					setSelectedIndex(Math.max(0, filteredHistory.length - 2));
-				}
-			} catch (error) {
-				handleError(error, "Failed to delete item");
-			}
-		},
-		[
-			handleError,
-			refreshHistory,
-			refreshFilteredHistory,
-			selectedIndex,
-			filteredHistory.length,
-			setSelectedIndex,
-		],
-	);
-
-	/**
-	 * Handles clearing all clipboard history with confirmation
-	 */
-	const handleClearAll = useCallback(async () => {
-		setIsSettingsMenuOpen(false);
-		const confirmed = window.confirm(
-			"Are you sure you want to clear all clipboard history? This action cannot be undone.",
-		);
-		if (!confirmed) return;
-
-		try {
-			setError(null);
-			await clearAllHistory();
-			await refreshHistory();
-			resetPagination();
-			setSelectedIndex(0);
-		} catch (error) {
-			handleError(error, "Failed to clear history");
-		}
-	}, [handleError, refreshHistory, resetPagination, setSelectedIndex]);
-
-	/**
 	 * Handles loading more items for pagination
 	 */
 	const handleLoadMore = useCallback(async () => {
 		try {
 			setError(null);
 			await loadMore();
-		} catch (error) {
-			handleError(error, "Failed to load more items");
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			setError(`Failed to load more items: ${message}`);
+			console.error("Failed to load more items", err);
 		}
-	}, [handleError, loadMore]);
+	}, [setError, loadMore]);
+
+	/**
+	 * Handles clear all from settings menu (closes menu first)
+	 */
+	const handleSettingsClearAll = useCallback(async () => {
+		setIsSettingsMenuOpen(false);
+		await handleClearAll();
+	}, [handleClearAll]);
 
 	/**
 	 * Handles quitting the application
@@ -230,263 +150,40 @@ function App() {
 		<div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
 			{/* Error Message */}
 			{error && (
-				<div className="sticky top-0 z-20 bg-red-600 text-white px-3 py-2 text-sm flex items-center justify-between">
-					<span>{error}</span>
-					<button
-						type="button" // Add explicit type prop for button element
-						onClick={() => setError(null)}
-						className="hover:bg-red-700 rounded p-1"
-					>
-						<X className="w-4 h-4" />
-					</button>
-				</div>
+				<ErrorBanner message={error} onDismiss={() => setError(null)} />
 			)}
 
 			{/* Search Bar */}
-			<div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 p-3">
-				<div className="relative flex items-center gap-2">
-					<div className="relative flex-1">
-						<Search className="absolute left-3 text-gray-400 w-4 h-4 top-1/2 -translate-y-1/2" />
-						<input
-							ref={searchInputRef}
-							type="text"
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							placeholder="Search clipboard history..."
-							className="w-full pl-10 pr-10 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-						/>
-						{searchQuery && (
-							<button
-								type="button" // Add explicit type prop for button element
-								onClick={() => setSearchQuery("")}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-							>
-								<X className="w-4 h-4" />
-							</button>
-						)}
-					</div>
-					{/* Favorites Filter Toggle */}
-					<button
-						type="button"
-						onClick={() => setFavoritesOnly(!favoritesOnly)}
-						className={`
-              p-2 rounded-lg transition-colors
-              ${
-								favoritesOnly
-									? "bg-yellow-600 text-yellow-100 hover:bg-yellow-500"
-									: "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-white"
-							}
-            `}
-						title={favoritesOnly ? "Show all items" : "Show favorites only"}
-						aria-label={
-							favoritesOnly ? "Show all items" : "Show favorites only"
-						}
-					>
-						<Star
-							className={`w-4 h-4 ${favoritesOnly ? "fill-current" : ""}`}
-						/>
-					</button>
-				</div>
-			</div>
+			<SearchBar
+				inputRef={searchInputRef}
+				searchQuery={searchQuery}
+				onSearchChange={setSearchQuery}
+				favoritesOnly={favoritesOnly}
+				onFavoritesToggle={() => setFavoritesOnly(!favoritesOnly)}
+			/>
 
 			{/* History List */}
-			<div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-				{filteredHistory.length === 0 ? (
-					<div className="text-center text-gray-400 py-8">
-						<p>No clipboard history found</p>
-						{searchQuery && (
-							<p className="text-sm mt-2">Try a different search term</p>
-						)}
-					</div>
-				) : (
-					<>
-						{filteredHistory.map((item, index) => (
-							// biome-ignore lint/a11y/useSemanticElements: Need div with role="button" to allow nested buttons (Copy/Delete)
-							<div
-								key={item.id}
-								ref={(el) => {
-									itemRefs.current[index] = el;
-								}}
-								onClick={() => handleItemClick(item)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										handleItemClick(item);
-									}
-								}}
-								role="button"
-								tabIndex={0}
-								className={`
-                group relative p-3 rounded-lg cursor-pointer transition-all duration-150
-                ${
-									index === selectedIndex
-										? "bg-blue-600 text-white shadow-lg"
-										: "bg-gray-800 hover:bg-gray-700 text-gray-100"
-								}
-              `}
-							>
-								<div className="flex items-start justify-between gap-2">
-									<div className="flex-1 min-w-0">
-										<p className="text-sm break-words">
-											{truncateText(item.content)}
-										</p>
-										<span
-											className={`
-                      text-xs whitespace-nowrap block mt-1
-                      ${
-												index === selectedIndex
-													? "text-blue-100"
-													: "text-gray-400"
-											}
-                    `}
-										>
-											{formatDate(item.created_at)}
-										</span>
-									</div>
-
-									{/* Hover-reveal action buttons */}
-									<div
-										className={`flex items-center gap-1 transition-opacity duration-150 ml-2 ${
-											index === selectedIndex
-												? "opacity-100"
-												: "opacity-0 group-hover:opacity-100"
-										}`}
-									>
-										<button
-											type="button"
-											onClick={(e) => handleToggleFavorite(e, item.id)}
-											className={`
-                      p-1.5 rounded transition-colors
-                      ${
-												index === selectedIndex
-													? item.is_favorite
-														? "hover:bg-blue-500 text-yellow-300"
-														: "hover:bg-blue-500 text-white"
-													: item.is_favorite
-														? "hover:bg-gray-600 text-yellow-400 hover:text-yellow-300"
-														: "hover:bg-gray-600 text-gray-400 hover:text-white"
-											}
-                    `}
-											title={
-												item.is_favorite
-													? "Remove from favorites"
-													: "Add to favorites"
-											}
-											aria-label={
-												item.is_favorite
-													? "Remove from favorites"
-													: "Add to favorites"
-											}
-										>
-											<Star
-												className={`w-4 h-4 ${
-													item.is_favorite ? "fill-current" : ""
-												}`}
-											/>
-										</button>
-										<button
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												handleItemClick(item);
-											}}
-											className={`
-                      p-1.5 rounded transition-colors
-                      ${
-												index === selectedIndex
-													? "hover:bg-blue-500 text-white"
-													: "hover:bg-gray-600 text-gray-400 hover:text-white"
-											}
-                    `}
-											title="Copy to clipboard"
-											aria-label="Copy to clipboard"
-										>
-											<Copy className="w-4 h-4" />
-										</button>
-										<button
-											type="button"
-											onClick={(e) => handleDeleteItem(e, item.id)}
-											className={`
-                      p-1.5 rounded transition-colors
-                      ${
-												index === selectedIndex
-													? "hover:bg-blue-500 text-white"
-													: "hover:bg-red-600 text-gray-400 hover:text-white"
-											}
-                    `}
-											title="Delete item"
-											aria-label="Delete this clipboard item"
-										>
-											<Trash2 className="w-4 h-4" />
-										</button>
-									</div>
-								</div>
-							</div>
-						))}
-						{/* Load More Button */}
-						{filteredHistory.length > 0 && hasMore && (
-							<div className="flex justify-center py-4">
-								<button
-									type="button"
-									onClick={handleLoadMore}
-									disabled={isLoadingMore}
-									className={`
-										px-4 py-2 rounded-lg transition-colors text-sm font-medium
-										${
-											isLoadingMore
-												? "bg-gray-700 text-gray-500 cursor-not-allowed"
-												: "bg-gray-700 text-white hover:bg-gray-600"
-										}
-									`}
-								>
-									{isLoadingMore ? "Loading..." : "Load More"}
-								</button>
-							</div>
-						)}
-					</>
-				)}
-			</div>
+			<HistoryList
+				items={filteredHistory}
+				searchQuery={searchQuery}
+				selectedIndex={selectedIndex}
+				itemRefs={itemRefs}
+				hasMore={hasMore}
+				isLoadingMore={isLoadingMore}
+				onItemClick={handleItemClick}
+				onToggleFavorite={handleToggleFavorite}
+				onDelete={handleDeleteItem}
+				onLoadMore={handleLoadMore}
+			/>
 
 			{/* Footer with hint and settings */}
-			<div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 px-3 py-2">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2 text-xs text-gray-400">
-						<span>↑↓ Navigate • Enter Copy • Esc Close</span>
-						<span className="hidden sm:inline">Cmd+Shift+V Toggle</span>
-					</div>
-					{/* Settings Menu */}
-					<div className="relative" ref={settingsMenuRef}>
-						<button
-							type="button"
-							onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
-							className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-							title="Settings"
-							aria-label="Settings"
-						>
-							<Settings className="w-4 h-4" />
-						</button>
-						{isSettingsMenuOpen && (
-							<div className="absolute bottom-full right-0 mb-2 w-40 bg-gray-700 border border-gray-600 rounded-lg shadow-lg overflow-hidden z-50">
-								<button
-									type="button"
-									onClick={handleClearAll}
-									className="w-full px-4 py-2 text-left text-sm text-white hover:bg-gray-600 transition-colors flex items-center gap-2"
-								>
-									<Trash2 className="w-4 h-4" />
-									Clear All
-								</button>
-								<button
-									type="button"
-									onClick={handleQuit}
-									className="w-full px-4 py-2 text-left text-sm text-white hover:bg-gray-600 transition-colors"
-								>
-									Quit
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-			</div>
+			<Footer
+				isSettingsMenuOpen={isSettingsMenuOpen}
+				onSettingsToggle={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
+				onClearAll={handleSettingsClearAll}
+				onQuit={handleQuit}
+				settingsMenuRef={settingsMenuRef}
+			/>
 		</div>
 	);
 }

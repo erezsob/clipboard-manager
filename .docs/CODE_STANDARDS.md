@@ -12,6 +12,7 @@
 - Separate utility functions from component logic
 - Maintain single responsibility principle
 - Keep components focused and under 300 lines when possible
+- Prefer named exports over default exports (enables better refactoring and tree-shaking)
 
 ## 3. Error Handling
 - Consistent error handling patterns across the codebase
@@ -81,4 +82,5 @@
 - [ ] Functional and declarative approach used
 - [ ] Follow best practices
 - [ ] No direct DOM manipulation (use refs instead)
+- [ ] Named exports used (no default exports)
 
