@@ -160,12 +160,13 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Query invalidation and refetching
   - Reduced boilerplate code
 - Implementation:
-  - Wrap app with `QueryClientProvider`
-  - Convert `getHistory()`, `searchHistory()` to `useQuery` hooks
-  - Convert mutations (`addClip`, `deleteHistoryItem`, etc.) to `useMutation` hooks
-  - Implement query keys for proper cache management
-  - Add optimistic updates for delete/favorite operations
-  - Configure stale time and cache time appropriately
+  - ✅ Wrap app with `QueryClientProvider`
+  - ✅ Convert history fetching to `useInfiniteQuery` hooks
+  - ✅ Convert mutations (`deleteHistoryItem`, `toggleFavorite`, `clearAllHistory`) to `useMutation` hooks
+  - ✅ Implement query key factory (`src/lib/queryKeys.ts`) for proper cache management
+  - ✅ Add optimistic updates for delete/favorite operations
+  - ✅ Configure stale time and cache time appropriately
+  - ✅ Add automatic refetching on window focus
 
 ### Snippets Management Implementation
 - **Database Operations**:
@@ -322,7 +323,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - 🔮 Smooth animations
 - 🔮 Settings window
 - 🔮 Enhanced error messages
-- 🔮 TanStack Query integration for better data management
+- ✅ TanStack Query integration for better data management
 - 🔮 Persisted snippets for frequently used text
 - 🔮 Comprehensive automated test suite (80%+ coverage)
 

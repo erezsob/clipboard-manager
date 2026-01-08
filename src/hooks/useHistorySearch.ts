@@ -1,99 +1,75 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { HistoryItem } from "../lib/db";
-import { usePagination } from "./usePagination";
-import { usePrevious } from "./usePrevious";
-
-interface UseHistorySearchOptions {
-	/** The full history array from useClipboard */
-	history: HistoryItem[];
-}
+import { flattenHistoryPages, useHistoryQuery } from "./queries";
 
 interface UseHistorySearchReturn {
+	/** Current search query string */
 	searchQuery: string;
+	/** Update the search query */
 	setSearchQuery: (query: string) => void;
+	/** Whether to show only favorites */
 	favoritesOnly: boolean;
+	/** Update the favorites filter */
 	setFavoritesOnly: (value: boolean) => void;
+	/** Flattened array of history items from all loaded pages */
 	filteredHistory: HistoryItem[];
+	/** Whether more pages are being loaded */
 	isLoadingMore: boolean;
+	/** Whether there are more pages to load */
 	hasMore: boolean;
-	/** Current search error, or null if no error */
+	/** Current error message, or null if no error (auto-clears on successful refetch) */
 	searchError: string | null;
-	/** Clear the current search error */
-	clearSearchError: () => void;
-	refreshFilteredHistory: () => Promise<void>;
+	/** Refetch the history data */
+	refetchHistory: () => Promise<void>;
+	/** Load the next page of results */
 	loadMore: () => Promise<void>;
-	resetPagination: () => void;
 }
 
 /**
  * Hook that manages search query, favorites filter, and filtered history
- * Handles search/filter changes and integrates with pagination
- * @returns Search state, filter state, and pagination results
+ * Integrates with TanStack Query for data fetching and caching
+ *
+ * @returns Search state, filter state, and query results
  */
-export function useHistorySearch({
-	history,
-}: UseHistorySearchOptions): UseHistorySearchReturn {
+export function useHistorySearch(): UseHistorySearchReturn {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
-	const [searchError, setSearchError] = useState<string | null>(null);
-	const prevSearchQuery = usePrevious(searchQuery);
-	const prevFavoritesOnly = usePrevious(favoritesOnly);
 
-	// Track if we've already triggered refresh for current search/filter values
-	const lastRefreshedKey = useRef<string>("");
-
-	// Pagination hook manages filtered history and pagination state
+	// Use TanStack Query for data fetching
 	const {
-		filteredHistory,
-		isLoadingMore,
-		hasMore,
-		refreshFilteredHistory,
-		loadMore,
-		resetPagination,
-	} = usePagination({
+		data,
+		error,
+		isFetchingNextPage,
+		hasNextPage,
+		fetchNextPage,
+		refetch,
+	} = useHistoryQuery({
 		searchQuery,
 		favoritesOnly,
-		history,
 	});
 
-	// Refresh filtered history when search or filter changes
-	// Uses a ref to track refreshed state and avoid infinite loops
-	useEffect(() => {
-		const currentKey = `${searchQuery}|${favoritesOnly}`;
-		const searchOrFilterChanged =
-			prevSearchQuery !== searchQuery || prevFavoritesOnly !== favoritesOnly;
+	// Flatten paginated data into a single array
+	const filteredHistory = flattenHistoryPages(data?.pages);
 
-		// Only refresh if search/filter actually changed and we haven't already refreshed
-		if (!searchOrFilterChanged || lastRefreshedKey.current === currentKey) {
-			return;
+	// Convert error to string for display
+	// Note: TanStack Query automatically clears errors on successful refetch
+	const searchError = error ? String(error.message || error) : null;
+
+	/**
+	 * Refetch the history data
+	 */
+	const refetchHistory = useCallback(async () => {
+		await refetch();
+	}, [refetch]);
+
+	/**
+	 * Load the next page of results
+	 */
+	const loadMore = useCallback(async () => {
+		if (hasNextPage && !isFetchingNextPage) {
+			await fetchNextPage();
 		}
-
-		lastRefreshedKey.current = currentKey;
-
-		const refresh = async () => {
-			try {
-				setSearchError(null);
-				resetPagination();
-				await refreshFilteredHistory();
-			} catch (error) {
-				console.error("Failed to refresh history:", error);
-				setSearchError("Failed to search history. Please try again.");
-			}
-		};
-
-		refresh();
-	}, [
-		searchQuery,
-		favoritesOnly,
-		prevSearchQuery,
-		prevFavoritesOnly,
-		resetPagination,
-		refreshFilteredHistory,
-	]);
-
-	const clearSearchError = useCallback(() => {
-		setSearchError(null);
-	}, []);
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	return {
 		searchQuery,
@@ -101,12 +77,10 @@ export function useHistorySearch({
 		favoritesOnly,
 		setFavoritesOnly,
 		filteredHistory,
-		isLoadingMore,
-		hasMore,
+		isLoadingMore: isFetchingNextPage,
+		hasMore: hasNextPage ?? false,
 		searchError,
-		clearSearchError,
-		refreshFilteredHistory,
+		refetchHistory,
 		loadMore,
-		resetPagination,
 	};
 }

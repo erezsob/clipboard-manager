@@ -6,7 +6,7 @@
 - **Frontend**: React 19 + TypeScript + Tailwind CSS v4
 - **Backend**: Electron (Node.js + TypeScript)
 - **Database**: SQLite (via `better-sqlite3`)
-- **State Management**: React hooks (TanStack Query planned for Phase 5)
+- **State Management**: TanStack Query (`@tanstack/react-query`) for server state, React hooks for UI state
 - **Testing**: Not yet implemented (planned for Phase 7)
 - **Build Tool**: Vite
 - **Linting/Formatting**: Biome
@@ -45,16 +45,19 @@ mac-clipboard-manager/
 │   │       ├── HistoryItem.tsx
 │   │       └── HistoryList.tsx
 │   ├── hooks/           # React hooks
-│   │   ├── useClipboard.ts        # Clipboard monitoring
+│   │   ├── queries/               # TanStack Query hooks
+│   │   │   ├── index.ts           # Query hooks exports
+│   │   │   ├── useHistoryQuery.ts # Infinite query for history
+│   │   │   ├── useHistoryMutations.ts # Mutations (delete, favorite, clear)
+│   │   │   └── useClipboardMonitor.ts # Clipboard polling
 │   │   ├── useHistoryActions.ts   # Item actions (copy, delete, favorite)
-│   │   ├── useHistorySearch.ts    # Search and filter state
+│   │   ├── useHistorySearch.ts    # Search and filter state (uses TanStack Query)
 │   │   ├── useKeyboardNavigation.ts # Keyboard shortcuts
-│   │   ├── usePagination.ts       # Pagination logic
-│   │   ├── usePrevious.ts         # Previous value tracking
 │   │   └── useWindowVisibility.ts # Window visibility state
 │   ├── lib/             # Utility libraries
 │   │   ├── constants.ts # Application constants
 │   │   ├── db.ts        # Database operations
+│   │   ├── queryKeys.ts # TanStack Query key factory
 │   │   └── utils.ts     # Utility functions
 │   ├── types/           # TypeScript type definitions
 │   │   └── electron.d.ts # Electron API types
@@ -90,11 +93,17 @@ mac-clipboard-manager/
 - Handles IPC calls to Electron main process
 - Manages history, favorites, and search operations
 
-### Clipboard Monitoring (`src/hooks/useClipboard.ts`)
+### Clipboard Monitoring (`src/hooks/queries/useClipboardMonitor.ts`)
 - Polls clipboard every 1000ms
 - Detects clipboard changes
-- Adds new items to database
-- Manages history state
+- Adds new items to database via `addClip()`
+- Invalidates TanStack Query cache on new content
+
+### TanStack Query Integration (`src/hooks/queries/`)
+- `useHistoryQuery`: Infinite query for paginated history fetching
+- `useHistoryMutations`: Mutations with optimistic updates for delete/favorite/clear
+- `useClipboardMonitor`: Clipboard polling with cache invalidation
+- Query key factory in `src/lib/queryKeys.ts` for consistent cache management
 
 ## Data Flow
 
