@@ -36,7 +36,7 @@ async function fetchHistoryPage({
 	let items: HistoryItem[];
 
 	if (trimmedQuery === "") {
-		// Simple history fetch without search or favorites filter
+		// Simple history fetch without search.
 		items = await getHistory({ limit, offset, favoritesOnly });
 	} else {
 		// Search or favorites filter applied
