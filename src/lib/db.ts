@@ -45,7 +45,7 @@ export async function deleteHistoryItemResult(
 
 	return tryCatchAsync(
 		async () => {
-			window.electronAPI.db.deleteHistoryItem(id);
+			await window.electronAPI.db.deleteHistoryItem(id);
 		},
 		(error) => queryFailed("Failed to delete history item", error),
 	);
@@ -61,7 +61,7 @@ export async function clearAllHistoryResult(): Promise<Result<void, DbError>> {
 
 	return tryCatchAsync(
 		async () => {
-			window.electronAPI.db.clearAllHistory();
+			await window.electronAPI.db.clearAllHistory();
 		},
 		(error) => queryFailed("Failed to clear all history", error),
 	);
@@ -113,7 +113,7 @@ export async function getHistory(
  */
 export async function deleteHistoryItem(id: number): Promise<void> {
 	await waitForElectronAPI();
-	window.electronAPI.db.deleteHistoryItem(id);
+	await window.electronAPI.db.deleteHistoryItem(id);
 }
 
 /**
@@ -122,7 +122,7 @@ export async function deleteHistoryItem(id: number): Promise<void> {
  */
 export async function clearAllHistory(): Promise<void> {
 	await waitForElectronAPI();
-	window.electronAPI.db.clearAllHistory();
+	await window.electronAPI.db.clearAllHistory();
 }
 
 /**
