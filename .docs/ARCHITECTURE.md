@@ -7,7 +7,7 @@
 - **Backend**: Electron (Node.js + TypeScript)
 - **Database**: SQLite (via `better-sqlite3`)
 - **State Management**: TanStack Query (`@tanstack/react-query`) for server state, React hooks for UI state
-- **Testing**: Vitest + React Testing Library (118 tests)
+- **Testing**: Vitest + React Testing Library (100+ tests)
 - **Build Tool**: Vite
 - **Linting/Formatting**: Biome
 - **Package Manager**: pnpm
