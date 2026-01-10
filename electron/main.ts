@@ -56,6 +56,10 @@ function createWindow(): void {
 			mainWindow.isVisible()
 		) {
 			mainWindow.hide();
+			// On macOS, use app.hide() to return focus to the previous application
+			if (process.platform === "darwin") {
+				app.hide();
+			}
 			event.preventDefault();
 		}
 	});
@@ -73,6 +77,10 @@ function createWindow(): void {
 		blurTimeout = setTimeout(() => {
 			if (mainWindow?.isVisible() && !mainWindow.isFocused()) {
 				mainWindow.hide();
+				// On macOS, use app.hide() to return focus to the previous application
+				if (process.platform === "darwin") {
+					app.hide();
+				}
 			}
 			blurTimeout = null;
 		}, 50);
@@ -314,6 +322,10 @@ ipcMain.handle("window:show", () => {
 ipcMain.handle("window:hide", () => {
 	if (mainWindow) {
 		mainWindow.hide();
+		// On macOS, use app.hide() to return focus to the previous application
+		if (process.platform === "darwin") {
+			app.hide();
+		}
 	}
 });
 
