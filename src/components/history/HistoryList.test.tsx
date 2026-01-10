@@ -29,14 +29,11 @@ describe("HistoryList", () => {
 	} as const satisfies ComponentProps<typeof HistoryList>;
 
 	beforeEach(() => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-01-08T12:00:00.000Z"));
 		// Create fresh ref for each test
 		mockItemRefs = { current: [] };
 	});
 
 	afterEach(() => {
-		vi.useRealTimers();
 		vi.clearAllMocks();
 	});
 
