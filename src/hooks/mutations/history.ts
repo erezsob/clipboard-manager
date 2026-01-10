@@ -5,13 +5,13 @@ import {
 	toggleFavoriteResult,
 } from "../../lib/db";
 import { historyKeys } from "../../lib/queryKeys";
-import type { InfiniteHistoryData } from "./types";
+import type { InfiniteHistoryData } from "../queries/types";
 import {
 	applyTransform,
 	clearAllPages,
 	removeItemFromPages,
 	toggleItemFavorite,
-} from "./utils";
+} from "../queries/utils";
 
 /**
  * Hook for deleting a history item with optimistic update

@@ -4,7 +4,7 @@ import {
 	useClearHistoryMutation,
 	useDeleteItemMutation,
 	useToggleFavoriteMutation,
-} from "./queries";
+} from "./mutations";
 import {
 	calculateIndexAfterDelete,
 	formatActionError,

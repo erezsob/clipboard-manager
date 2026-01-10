@@ -6,12 +6,12 @@ import { historyKeys } from "../../lib/queryKeys";
 import { createMockHistoryItems } from "../../test/mocks/history";
 import { getMockElectronAPI } from "../../test/setup";
 import { createTestQueryClient } from "../../test/utils";
-import type { InfiniteHistoryData } from "./types";
+import type { InfiniteHistoryData } from "../queries/types";
 import {
 	useClearHistoryMutation,
 	useDeleteItemMutation,
 	useToggleFavoriteMutation,
-} from "./useHistoryMutations";
+} from "./history";
 
 describe("useDeleteItemMutation", () => {
 	const createWrapper = (queryClient = createTestQueryClient()) => {
