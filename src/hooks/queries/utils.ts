@@ -150,7 +150,7 @@ export const clearAllPages = (
 ): InfiniteHistoryData => ({
 	...data,
 	pages: [{ items: [], nextOffset: undefined }],
-	pageParams: [0],
+	pageParams: data.pageParams,
 });
 
 /**

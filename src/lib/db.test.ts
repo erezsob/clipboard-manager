@@ -62,7 +62,9 @@ describe("db", () => {
 
 			await getHistory({ favoritesOnly: true });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith({ favoritesOnly: true });
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+				favoritesOnly: true,
+			});
 		});
 
 		it("passes offset parameter correctly", async () => {

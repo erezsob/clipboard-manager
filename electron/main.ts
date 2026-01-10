@@ -272,6 +272,9 @@ const createTrayModule = (
 			tray = new Tray(nativeImage.createFromBuffer(buffer));
 		}
 
+		// Guard against tray creation failure
+		if (!tray) return;
+
 		// Create context menu for tray icon
 		const contextMenu = Menu.buildFromTemplate([
 			{
@@ -422,9 +425,16 @@ app.whenReady().then(() => {
 	registerIpcHandlers();
 
 	// Register global shortcut Cmd+Shift+V (or Ctrl+Shift+V on Windows/Linux)
-	globalShortcut.register("CommandOrControl+Shift+V", () =>
+	const shortcut = "CommandOrControl+Shift+V";
+	const registered = globalShortcut.register(shortcut, () =>
 		windowModule.toggle(),
 	);
+	if (!registered) {
+		console.error(
+			`Global shortcut registration failed for "${shortcut}". ` +
+				"The shortcut may already be in use by another application.",
+		);
+	}
 
 	app.on("activate", () => {
 		if (BrowserWindow.getAllWindows().length === 0) {
