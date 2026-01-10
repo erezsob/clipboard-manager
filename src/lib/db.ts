@@ -24,13 +24,11 @@ export interface GetHistoryOptions {
 export async function getHistoryResult(
 	options: GetHistoryOptions = {},
 ): Promise<Result<HistoryItem[], DbError>> {
-	const { query, limit = 50, favoritesOnly = false, offset = 0 } = options;
-
 	const apiResult = await waitForElectronAPIResult();
 	if (!apiResult.ok) return apiResult;
 
 	return tryCatchAsync(
-		() => window.electronAPI.db.getHistory(query, limit, favoritesOnly, offset),
+		() => window.electronAPI.db.getHistory(options),
 		(error) => queryFailed("Failed to get history", error),
 	);
 }
@@ -105,9 +103,8 @@ export async function addClip(text: string): Promise<void> {
 export async function getHistory(
 	options: GetHistoryOptions = {},
 ): Promise<HistoryItem[]> {
-	const { query, limit = 50, favoritesOnly = false, offset = 0 } = options;
 	await waitForElectronAPI();
-	return window.electronAPI.db.getHistory(query, limit, favoritesOnly, offset);
+	return window.electronAPI.db.getHistory(options);
 }
 
 /**

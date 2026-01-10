@@ -7,19 +7,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			ipcRenderer.invoke("clipboard:writeText", text) as Promise<void>,
 	},
 	db: {
-		getHistory: (
-			query?: string,
-			limit?: number,
-			favoritesOnly?: boolean,
-			offset?: number,
-		) =>
-			ipcRenderer.invoke(
-				"db:getHistory",
-				query,
-				limit,
-				favoritesOnly,
-				offset,
-			) as Promise<
+		getHistory: (options?: {
+			query?: string;
+			limit?: number;
+			favoritesOnly?: boolean;
+			offset?: number;
+		}) =>
+			ipcRenderer.invoke("db:getHistory", options ?? {}) as Promise<
 				Array<{
 					id: number;
 					content: string;

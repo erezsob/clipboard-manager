@@ -32,12 +32,7 @@ describe("db", () => {
 
 			const result = await getHistory();
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				50,
-				false,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({});
 			expect(result).toEqual(mockItems);
 		});
 
@@ -47,12 +42,9 @@ describe("db", () => {
 
 			await getHistory({ query: "search term" });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				"search term",
-				50,
-				false,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+				query: "search term",
+			});
 		});
 
 		it("passes limit parameter correctly", async () => {
@@ -61,12 +53,7 @@ describe("db", () => {
 
 			await getHistory({ limit: 100 });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				100,
-				false,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({ limit: 100 });
 		});
 
 		it("passes favoritesOnly parameter correctly", async () => {
@@ -75,12 +62,7 @@ describe("db", () => {
 
 			await getHistory({ favoritesOnly: true });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				50,
-				true,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({ favoritesOnly: true });
 		});
 
 		it("passes offset parameter correctly", async () => {
@@ -89,12 +71,7 @@ describe("db", () => {
 
 			await getHistory({ offset: 50 });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				50,
-				false,
-				50,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({ offset: 50 });
 		});
 
 		it("passes all parameters correctly", async () => {
@@ -108,7 +85,12 @@ describe("db", () => {
 				offset: 100,
 			});
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith("test", 25, true, 100);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+				query: "test",
+				limit: 25,
+				favoritesOnly: true,
+				offset: 100,
+			});
 		});
 	});
 

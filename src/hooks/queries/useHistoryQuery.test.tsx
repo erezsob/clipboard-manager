@@ -67,12 +67,12 @@ describe("useHistoryQuery", () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-			"test search",
-			100, // INITIAL_LOAD_COUNT
-			false,
-			0,
-		);
+		expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+			query: "test search",
+			limit: 100, // INITIAL_LOAD_COUNT
+			favoritesOnly: false,
+			offset: 0,
+		});
 	});
 
 	it("trims whitespace from search query", async () => {
@@ -88,7 +88,12 @@ describe("useHistoryQuery", () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(mockApi.db.getHistory).toHaveBeenCalledWith("test", 100, false, 0);
+		expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+			query: "test",
+			limit: 100,
+			favoritesOnly: false,
+			offset: 0,
+		});
 	});
 
 	it("passes favoritesOnly to getHistory", async () => {
@@ -104,7 +109,12 @@ describe("useHistoryQuery", () => {
 			expect(result.current.isSuccess).toBe(true);
 		});
 
-		expect(mockApi.db.getHistory).toHaveBeenCalledWith("", 100, true, 0);
+		expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+			query: "",
+			limit: 100,
+			favoritesOnly: true,
+			offset: 0,
+		});
 	});
 
 	it("determines hasNextPage correctly when more items exist", async () => {
