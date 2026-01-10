@@ -24,7 +24,8 @@
 		"format": "biome format --write",
 		"types:check": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
 		"knip": "knip",
-		"prepare": "husky"
+		"prepare": "husky",
+		"postinstall": "electron-rebuild -f -w better-sqlite3"
 	},
 	"dependencies": {
 		"@tanstack/react-query": "^5.90.16",
@@ -35,7 +36,7 @@
 		"react-dom": "^19.1.0"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["better-sqlite3", "electron"]
+		"onlyBuiltDependencies": ["better-sqlite3"]
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.10",
