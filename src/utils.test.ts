@@ -57,7 +57,7 @@ describe("waitFor", () => {
 		await promise;
 
 		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe("Condition not met after waiting");
+		expect(rejectionError?.message).toBe("Condition not met after 3 attempts");
 		expect(condition).toHaveBeenCalledTimes(3);
 	});
 
@@ -110,7 +110,7 @@ describe("waitFor", () => {
 		await promise;
 
 		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe("Condition not met after waiting");
+		expect(rejectionError?.message).toBe("Condition not met after 2 attempts");
 		expect(condition).toHaveBeenCalledTimes(2);
 	});
 });

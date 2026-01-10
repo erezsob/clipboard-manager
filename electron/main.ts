@@ -16,207 +16,297 @@ import { runMigrations } from "./lib/migrations.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let mainWindow: BrowserWindow | null = null;
-let db: Database.Database | null = null;
-let tray: Tray | null = null;
+// ============================================================================
+// Pure Functions
+// ============================================================================
 
-function createWindow(): void {
-	mainWindow = new BrowserWindow({
-		width: 450,
-		height: 600,
-		frame: false,
-		transparent: true,
-		alwaysOnTop: true,
-		show: false,
-		webPreferences: {
-			preload: path.join(__dirname, "preload.js"),
-			contextIsolation: true,
-			nodeIntegration: false,
-		},
-	});
+/**
+ * Normalizes whitespace in text for near-duplicate detection.
+ * Pure function - no side effects.
+ *
+ * @param text - Input text to normalize
+ * @returns Text with trimmed edges and collapsed internal whitespace
+ */
+export const normalizeWhitespace = (text: string): string =>
+	text.trim().replace(/\s+/g, " ");
 
-	// Load the app
-	// In development, always try to load from dev server first
-	const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
-	if (isDev) {
-		mainWindow.loadURL("http://localhost:5173");
-	} else {
-		mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+/**
+ * Checks if new text is a near-duplicate of recent text.
+ * Pure function - compares normalized versions.
+ *
+ * @param newText - New text to check
+ * @param recentText - Recent text to compare against
+ * @returns true if texts are duplicates (exact or near-duplicate)
+ */
+export const isNearDuplicate = (newText: string, recentText: string): boolean =>
+	newText === recentText ||
+	normalizeWhitespace(newText) === normalizeWhitespace(recentText);
+
+/**
+ * Checks if text is empty or whitespace-only.
+ * Pure function.
+ */
+export const isEmptyText = (text: string | null | undefined): boolean =>
+	!text || text.trim().length === 0;
+
+/**
+ * Builds a SQL query for history with optional filters.
+ * Pure function - returns query string and params.
+ */
+export const buildHistoryQuery = (options: {
+	query?: string;
+	limit?: number;
+	favoritesOnly?: boolean;
+	offset?: number;
+}): { sql: string; params: (string | number)[] } => {
+	const { query = "", limit = 50, favoritesOnly = false, offset = 0 } = options;
+	const conditions: string[] = [];
+	const params: (string | number)[] = [];
+
+	if (query.trim()) {
+		conditions.push("content LIKE ?");
+		params.push(`%${query}%`);
 	}
 
-	// Center window
-	mainWindow.center();
+	if (favoritesOnly) {
+		conditions.push("is_favorite = 1");
+	}
 
-	// Handle Escape key in main process
-	mainWindow.webContents.on("before-input-event", (event, input) => {
-		// Check both key and code for Escape
-		if (
-			(input.key === "Escape" || input.code === "Escape") &&
-			mainWindow &&
-			mainWindow.isVisible()
-		) {
-			mainWindow.hide();
-			// On macOS, use app.hide() to return focus to the previous application
-			if (process.platform === "darwin") {
-				app.hide();
-			}
-			event.preventDefault();
+	const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
+	const sql = `SELECT id, content, type, created_at, is_favorite FROM history${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+
+	params.push(limit, offset);
+
+	return { sql, params };
+};
+
+// ============================================================================
+// Database Module (encapsulated state)
+// ============================================================================
+
+/**
+ * Creates a database module with encapsulated state.
+ * The database instance is private to this closure.
+ */
+const createDbModule = () => {
+	let db: Database.Database | null = null;
+
+	const init = (dbPath: string): void => {
+		db = new Database(dbPath);
+		runMigrations(db);
+	};
+
+	const getDb = (): Database.Database => {
+		if (!db) throw new Error("Database not initialized");
+		return db;
+	};
+
+	const close = (): void => {
+		if (db) {
+			db.close();
+			db = null;
 		}
-	});
+	};
 
-	// Hide window when it loses focus (click outside)
+	const isInitialized = (): boolean => db !== null;
+
+	return { init, getDb, close, isInitialized };
+};
+
+// ============================================================================
+// Window Module (encapsulated state)
+// ============================================================================
+
+/**
+ * Creates a window module with encapsulated state.
+ */
+const createWindowModule = () => {
+	let mainWindow: BrowserWindow | null = null;
 	let blurTimeout: NodeJS.Timeout | null = null;
 
-	mainWindow.on("blur", () => {
-		if (!mainWindow?.isVisible()) return;
-		// Clear any existing timeout
-		if (blurTimeout) {
-			clearTimeout(blurTimeout);
+	const create = (): void => {
+		mainWindow = new BrowserWindow({
+			width: 450,
+			height: 600,
+			frame: false,
+			transparent: true,
+			alwaysOnTop: true,
+			show: false,
+			webPreferences: {
+				preload: path.join(__dirname, "preload.js"),
+				contextIsolation: true,
+				nodeIntegration: false,
+			},
+		});
+
+		// Load the app
+		const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
+		if (isDev) {
+			mainWindow.loadURL("http://localhost:5173");
+		} else {
+			mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
 		}
-		// Small delay to avoid hiding when interacting with window controls
-		blurTimeout = setTimeout(() => {
-			if (mainWindow?.isVisible() && !mainWindow.isFocused()) {
+
+		// Center window on screen
+		mainWindow.center();
+
+		// Handle Escape key in main process
+		// Check both key and code for Escape for cross-platform compatibility
+		mainWindow.webContents.on("before-input-event", (event, input) => {
+			if (
+				(input.key === "Escape" || input.code === "Escape") &&
+				mainWindow?.isVisible()
+			) {
 				mainWindow.hide();
 				// On macOS, use app.hide() to return focus to the previous application
 				if (process.platform === "darwin") {
 					app.hide();
 				}
+				event.preventDefault();
 			}
-			blurTimeout = null;
-		}, 50);
-	});
+		});
 
-	mainWindow.on("focus", () => {
+		// Hide window when it loses focus (click outside)
+		// Small delay to avoid hiding when interacting with window controls
+		mainWindow.on("blur", () => {
+			if (!mainWindow?.isVisible()) return;
+			// Clear any existing timeout
+			if (blurTimeout) clearTimeout(blurTimeout);
+			blurTimeout = setTimeout(() => {
+				if (mainWindow?.isVisible() && !mainWindow.isFocused()) {
+					mainWindow.hide();
+					// On macOS, use app.hide() to return focus to the previous application
+					if (process.platform === "darwin") {
+						app.hide();
+					}
+				}
+				blurTimeout = null;
+			}, 50);
+		});
+
 		// Cancel hide if window regains focus
-		if (blurTimeout) {
-			clearTimeout(blurTimeout);
-			blurTimeout = null;
+		mainWindow.on("focus", () => {
+			if (blurTimeout) {
+				clearTimeout(blurTimeout);
+				blurTimeout = null;
+			}
+		});
+
+		mainWindow.on("closed", () => {
+			mainWindow = null;
+		});
+	};
+
+	const getWindow = (): BrowserWindow | null => mainWindow;
+
+	const show = (): void => {
+		if (mainWindow) {
+			mainWindow.center();
+			mainWindow.show();
+			mainWindow.focus();
 		}
-	});
+	};
 
-	mainWindow.on("closed", () => {
-		mainWindow = null;
-	});
-}
+	const hide = (): void => {
+		if (mainWindow) {
+			mainWindow.hide();
+			// On macOS, use app.hide() to return focus to the previous application
+			if (process.platform === "darwin") {
+				app.hide();
+			}
+		}
+	};
 
-function initDatabase(): void {
-	const dbPath = path.join(app.getPath("userData"), "clipboard.db");
-	db = new Database(dbPath);
-
-	// Run all migrations
-	runMigrations(db);
-}
-
-function createTray(): void {
-	// Create a simple programmatic icon for the tray
-	// On macOS, tray icons should be template images (black with transparency)
-	const iconSize = 16;
-
-	// Try to use the app icon as a fallback
-	try {
-		const appIcon = nativeImage.createFromNamedImage("NSApplicationIcon");
-		if (!appIcon.isEmpty()) {
-			tray = new Tray(appIcon.resize({ width: iconSize, height: iconSize }));
+	const toggle = (): void => {
+		if (mainWindow?.isVisible()) {
+			hide();
 		} else {
-			// Create a minimal icon using a 1x1 pixel image
-			// This will show as a small dot, but it's better than nothing
+			show();
+		}
+	};
+
+	const center = (): void => mainWindow?.center();
+	const isVisible = (): boolean => mainWindow?.isVisible() ?? false;
+
+	return { create, getWindow, show, hide, toggle, center, isVisible };
+};
+
+// ============================================================================
+// Tray Module (encapsulated state)
+// ============================================================================
+
+/**
+ * Creates a tray module with encapsulated state.
+ */
+const createTrayModule = (windowModule: ReturnType<typeof createWindowModule>) => {
+	let tray: Tray | null = null;
+
+	const create = (): void => {
+		// Create a simple programmatic icon for the tray
+		// On macOS, tray icons should be template images (black with transparency)
+		const iconSize = 16;
+
+		// Try to use the app icon as a fallback
+		try {
+			const appIcon = nativeImage.createFromNamedImage("NSApplicationIcon");
+			if (!appIcon.isEmpty()) {
+				tray = new Tray(appIcon.resize({ width: iconSize, height: iconSize }));
+			} else {
+				// Create a minimal icon using a 1x1 pixel image
+				// This will show as a small dot, but it's better than nothing
+				const buffer = Buffer.from(
+					"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+					"base64",
+				);
+				tray = new Tray(nativeImage.createFromBuffer(buffer));
+			}
+		} catch {
+			// Ultimate fallback: create from a tiny buffer
 			const buffer = Buffer.from(
 				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
 				"base64",
 			);
-			const minimalIcon = nativeImage.createFromBuffer(buffer);
-			tray = new Tray(minimalIcon);
+			tray = new Tray(nativeImage.createFromBuffer(buffer));
 		}
-	} catch {
-		// Ultimate fallback: create from a tiny buffer
-		const buffer = Buffer.from(
-			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-			"base64",
-		);
-		const minimalIcon = nativeImage.createFromBuffer(buffer);
-		tray = new Tray(minimalIcon);
-	}
 
-	// Create context menu
-	const contextMenu = Menu.buildFromTemplate([
-		{
-			label: "Open",
-			click: () => {
-				if (mainWindow) {
-					mainWindow.center();
-					mainWindow.show();
-					mainWindow.focus();
-				}
+		// Create context menu for tray icon
+		const contextMenu = Menu.buildFromTemplate([
+			{
+				label: "Open",
+				click: () => windowModule.show(),
 			},
-		},
-		{
-			type: "separator",
-		},
-		{
-			label: "Quit",
-			click: () => {
-				app.quit();
+			{ type: "separator" },
+			{
+				label: "Quit",
+				click: () => app.quit(),
 			},
-		},
-	]);
+		]);
 
-	tray.setContextMenu(contextMenu);
-	tray.setToolTip("Clipboard Manager");
-}
+		tray.setContextMenu(contextMenu);
+		tray.setToolTip("Clipboard Manager");
+	};
 
-app.whenReady().then(() => {
-	initDatabase();
-	createWindow();
-	createTray();
+	return { create };
+};
 
-	// Register global shortcut Cmd+Shift+V
-	globalShortcut.register("CommandOrControl+Shift+V", () => {
-		if (mainWindow) {
-			if (mainWindow.isVisible()) {
-				mainWindow.hide();
-			} else {
-				mainWindow.center();
-				mainWindow.show();
-				mainWindow.focus();
-			}
-		}
-	});
+// ============================================================================
+// IPC Handler Factories (pure functions that create handlers)
+// ============================================================================
 
-	app.on("activate", () => {
-		if (BrowserWindow.getAllWindows().length === 0) {
-			createWindow();
-		}
-	});
+/**
+ * Creates clipboard IPC handlers
+ */
+const createClipboardHandlers = () => ({
+	readText: () => clipboard.readText(),
+	writeText: (_event: Electron.IpcMainInvokeEvent, text: string) => clipboard.writeText(text),
 });
 
-app.on("window-all-closed", () => {
-	// On macOS, keep the app running even when all windows are closed
-	// The tray icon keeps the app alive
-	if (process.platform !== "darwin") {
-		app.quit();
-	}
-});
-
-app.on("will-quit", () => {
-	globalShortcut.unregisterAll();
-	if (db) {
-		db.close();
-	}
-});
-
-// IPC handlers
-ipcMain.handle("clipboard:readText", () => {
-	return clipboard.readText();
-});
-
-ipcMain.handle("clipboard:writeText", (_event, text: string) => {
-	clipboard.writeText(text);
-});
-
-ipcMain.handle(
-	"db:getHistory",
-	(
-		_event,
+/**
+ * Creates database IPC handlers
+ */
+const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
+	getHistory: (
+		_event: Electron.IpcMainInvokeEvent,
 		options: {
 			query?: string;
 			limit?: number;
@@ -224,118 +314,121 @@ ipcMain.handle(
 			offset?: number;
 		},
 	) => {
-		if (!db) throw new Error("Database not initialized");
-
-		const {
-			query = "",
-			limit = 50,
-			favoritesOnly = false,
-			offset = 0,
-		} = options;
-		const conditions: string[] = [];
-		const params: (string | number)[] = [];
-
-		if (query.trim()) {
-			conditions.push("content LIKE ?");
-			params.push(`%${query}%`);
-		}
-
-		if (favoritesOnly) {
-			conditions.push("is_favorite = 1");
-		}
-
-		const sql = `
-			SELECT id, content, type, created_at, is_favorite FROM history${
-				conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : ""
-			} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-
-		params.push(limit, offset);
-
+		const db = dbModule.getDb();
+		const { sql, params } = buildHistoryQuery(options);
 		return db.prepare(sql).all(...params);
 	},
-);
 
-// Normalize whitespace for near-duplicate detection
-function normalizeWhitespace(text: string): string {
-	return text.trim().replace(/\s+/g, " ");
-}
+	addClip: (_event: Electron.IpcMainInvokeEvent, text: string) => {
+		if (isEmptyText(text)) return;
 
-ipcMain.handle("db:addClip", (_event, text: string) => {
-	if (!db) throw new Error("Database not initialized");
-	if (!text || text.trim().length === 0) return;
+		const db = dbModule.getDb();
+		const recent = db
+			.prepare("SELECT content FROM history ORDER BY created_at DESC LIMIT 1")
+			.get() as { content: string } | undefined;
 
-	// Normalize the new text for comparison
-	const normalizedNew = normalizeWhitespace(text);
-
-	// Check for exact duplicate or near-duplicate
-	const recent = db
-		.prepare("SELECT content FROM history ORDER BY created_at DESC LIMIT 1")
-		.get() as { content: string } | undefined;
-	if (recent) {
-		const normalizedRecent = normalizeWhitespace(recent.content);
-		// Skip if exact duplicate or near-duplicate (normalized whitespace matches)
-		if (recent.content === text || normalizedRecent === normalizedNew) {
+		if (recent && isNearDuplicate(text, recent.content)) {
 			return;
 		}
-	}
 
-	const stmt = db.prepare("INSERT INTO history (content, type) VALUES (?, ?)");
-	stmt.run(text, "text");
+		db.prepare("INSERT INTO history (content, type) VALUES (?, ?)").run(text, "text");
+	},
+
+	deleteHistoryItem: (_event: Electron.IpcMainInvokeEvent, id: number) => {
+		const db = dbModule.getDb();
+		db.prepare("DELETE FROM history WHERE id = ?").run(id);
+	},
+
+	clearAllHistory: () => {
+		const db = dbModule.getDb();
+		db.prepare("DELETE FROM history").run();
+	},
+
+	toggleFavorite: (_event: Electron.IpcMainInvokeEvent, id: number) => {
+		const db = dbModule.getDb();
+		db.prepare("UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?").run(id);
+		// Return the new favorite state
+		const result = db.prepare("SELECT is_favorite FROM history WHERE id = ?").get(id) as
+			| { is_favorite: number }
+			| undefined;
+		return result ? Boolean(result.is_favorite) : false;
+	},
 });
 
-ipcMain.handle("db:deleteHistoryItem", (_event, id: number) => {
-	if (!db) throw new Error("Database not initialized");
-	const stmt = db.prepare("DELETE FROM history WHERE id = ?");
-	stmt.run(id);
+/**
+ * Creates window IPC handlers
+ */
+const createWindowHandlers = (windowModule: ReturnType<typeof createWindowModule>) => ({
+	center: () => windowModule.center(),
+	show: () => windowModule.show(),
+	hide: () => windowModule.hide(),
+	isVisible: () => windowModule.isVisible(),
 });
 
-ipcMain.handle("db:clearAllHistory", () => {
-	if (!db) throw new Error("Database not initialized");
-	db.prepare("DELETE FROM history").run();
-});
+// ============================================================================
+// Application Bootstrap
+// ============================================================================
 
-ipcMain.handle("db:toggleFavorite", (_event, id: number) => {
-	if (!db) throw new Error("Database not initialized");
-	const stmt = db.prepare(
-		"UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?",
-	);
-	stmt.run(id);
-	// Return the new favorite state
-	const getStmt = db.prepare("SELECT is_favorite FROM history WHERE id = ?");
-	const result = getStmt.get(id) as { is_favorite: number } | undefined;
-	return result ? Boolean(result.is_favorite) : false;
-});
+// Create module instances
+const dbModule = createDbModule();
+const windowModule = createWindowModule();
+const trayModule = createTrayModule(windowModule);
 
-ipcMain.handle("window:center", () => {
-	if (mainWindow) {
-		mainWindow.center();
-	}
-});
+// Create handlers
+const clipboardHandlers = createClipboardHandlers();
+const dbHandlers = createDbHandlers(dbModule);
+const windowHandlers = createWindowHandlers(windowModule);
 
-ipcMain.handle("window:show", () => {
-	if (mainWindow) {
-		mainWindow.show();
-		mainWindow.focus();
-	}
-});
+// Register all IPC handlers
+const registerIpcHandlers = (): void => {
+	// Clipboard handlers
+	ipcMain.handle("clipboard:readText", clipboardHandlers.readText);
+	ipcMain.handle("clipboard:writeText", clipboardHandlers.writeText);
 
-ipcMain.handle("window:hide", () => {
-	if (mainWindow) {
-		mainWindow.hide();
-		// On macOS, use app.hide() to return focus to the previous application
-		if (process.platform === "darwin") {
-			app.hide();
+	// Database handlers
+	ipcMain.handle("db:getHistory", dbHandlers.getHistory);
+	ipcMain.handle("db:addClip", dbHandlers.addClip);
+	ipcMain.handle("db:deleteHistoryItem", dbHandlers.deleteHistoryItem);
+	ipcMain.handle("db:clearAllHistory", dbHandlers.clearAllHistory);
+	ipcMain.handle("db:toggleFavorite", dbHandlers.toggleFavorite);
+
+	// Window handlers
+	ipcMain.handle("window:center", windowHandlers.center);
+	ipcMain.handle("window:show", windowHandlers.show);
+	ipcMain.handle("window:hide", windowHandlers.hide);
+	ipcMain.handle("window:isVisible", windowHandlers.isVisible);
+
+	// App handlers
+	ipcMain.handle("app:quit", () => app.quit());
+};
+
+// Application ready
+app.whenReady().then(() => {
+	const dbPath = path.join(app.getPath("userData"), "clipboard.db");
+	dbModule.init(dbPath);
+	windowModule.create();
+	trayModule.create();
+	registerIpcHandlers();
+
+	// Register global shortcut Cmd+Shift+V (or Ctrl+Shift+V on Windows/Linux)
+	globalShortcut.register("CommandOrControl+Shift+V", () => windowModule.toggle());
+
+	app.on("activate", () => {
+		if (BrowserWindow.getAllWindows().length === 0) {
+			windowModule.create();
 		}
+	});
+});
+
+app.on("window-all-closed", () => {
+	// On macOS, keep the app running even when all windows are closed
+	// The tray icon keeps the app alive for background clipboard monitoring
+	if (process.platform !== "darwin") {
+		app.quit();
 	}
 });
 
-ipcMain.handle("window:isVisible", () => {
-	if (mainWindow) {
-		return mainWindow.isVisible();
-	}
-	return false;
-});
-
-ipcMain.handle("app:quit", () => {
-	app.quit();
+app.on("will-quit", () => {
+	globalShortcut.unregisterAll();
+	dbModule.close();
 });

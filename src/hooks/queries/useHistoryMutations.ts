@@ -1,11 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-	clearAllHistory,
-	deleteHistoryItem,
-	toggleFavorite,
+	clearAllHistoryResult,
+	deleteHistoryItemResult,
+	toggleFavoriteResult,
 } from "../../lib/db";
 import { historyKeys } from "../../lib/queryKeys";
 import type { InfiniteHistoryData } from "./types";
+import {
+	applyTransform,
+	clearAllPages,
+	removeItemFromPages,
+	toggleItemFavorite,
+} from "./utils";
 
 /**
  * Hook for deleting a history item with optimistic update
@@ -15,7 +21,13 @@ export function useDeleteItemMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (itemId: number) => deleteHistoryItem(itemId),
+		mutationFn: async (itemId: number) => {
+			const result = await deleteHistoryItemResult(itemId);
+			if (!result.ok) {
+				console.error("Failed to delete item:", result.error.message);
+				throw result.error;
+			}
+		},
 		onMutate: async (itemId) => {
 			// Cancel any outgoing refetches to avoid overwriting optimistic update
 			await queryClient.cancelQueries({ queryKey: historyKeys.all });
@@ -28,16 +40,7 @@ export function useDeleteItemMutation() {
 			// Optimistically remove item from all history queries
 			queryClient.setQueriesData<InfiniteHistoryData>(
 				{ queryKey: historyKeys.all },
-				(old) => {
-					if (!old) return old;
-					return {
-						...old,
-						pages: old.pages.map((page) => ({
-							...page,
-							items: page.items.filter((item) => item.id !== itemId),
-						})),
-					};
-				},
+				applyTransform(removeItemFromPages(itemId)),
 			);
 
 			return { previousData };
@@ -65,7 +68,13 @@ export function useToggleFavoriteMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (itemId: number) => toggleFavorite(itemId),
+		mutationFn: async (itemId: number) => {
+			const result = await toggleFavoriteResult(itemId);
+			if (!result.ok) {
+				console.error("Failed to toggle favorite:", result.error.message);
+				throw result.error;
+			}
+		},
 		onMutate: async (itemId) => {
 			// Cancel any outgoing refetches
 			await queryClient.cancelQueries({ queryKey: historyKeys.all });
@@ -78,20 +87,7 @@ export function useToggleFavoriteMutation() {
 			// Optimistically toggle favorite status
 			queryClient.setQueriesData<InfiniteHistoryData>(
 				{ queryKey: historyKeys.all },
-				(old) => {
-					if (!old) return old;
-					return {
-						...old,
-						pages: old.pages.map((page) => ({
-							...page,
-							items: page.items.map((item) =>
-								item.id === itemId
-									? { ...item, is_favorite: item.is_favorite === 1 ? 0 : 1 }
-									: item,
-							),
-						})),
-					};
-				},
+				applyTransform(toggleItemFavorite(itemId)),
 			);
 
 			return { previousData };
@@ -119,19 +115,18 @@ export function useClearHistoryMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: () => clearAllHistory(),
+		mutationFn: async () => {
+			const result = await clearAllHistoryResult();
+			if (!result.ok) {
+				console.error("Failed to clear all history:", result.error.message);
+				throw result.error;
+			}
+		},
 		onSuccess: () => {
-			// Clear all history data from cache
+			// Clear all history data from cache using pure transformation
 			queryClient.setQueriesData<InfiniteHistoryData>(
 				{ queryKey: historyKeys.all },
-				(old) => {
-					if (!old) return old;
-					return {
-						...old,
-						pages: [{ items: [], nextOffset: undefined }],
-						pageParams: [0],
-					};
-				},
+				applyTransform(clearAllPages),
 			);
 			// Invalidate to refetch
 			queryClient.invalidateQueries({ queryKey: historyKeys.all });
