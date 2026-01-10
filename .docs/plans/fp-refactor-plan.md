@@ -386,15 +386,15 @@ Once all consumers are migrated:
 
 ### Phase 2 Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/hooks/queries/useHistoryQuery.ts` | Use `getHistoryResult`, handle Result |
-| `src/hooks/queries/useClipboardMonitor.ts` | Use `addClipResult`, `waitForCondition` |
-| `src/hooks/queries/useHistoryMutations.ts` | Use Result-returning db functions |
-| `src/lib/db.ts` | Remove deprecated functions |
-| `src/lib/utils.ts` | Remove deprecated `waitForElectronAPI`, `retryOperation` |
-| `src/utils.ts` | Remove deprecated `waitFor` |
-| Test files | Update to test new functions |
+| File                                       | Changes                                                  |
+| ------------------------------------------ | -------------------------------------------------------- |
+| `src/hooks/queries/useHistoryQuery.ts`     | Use `getHistoryResult`, handle Result                    |
+| `src/hooks/queries/useClipboardMonitor.ts` | Use `addClipResult`, `waitForCondition`                  |
+| `src/hooks/queries/useHistoryMutations.ts` | Use Result-returning db functions                        |
+| `src/lib/db.ts`                            | Remove deprecated functions                              |
+| `src/lib/utils.ts`                         | Remove deprecated `waitForElectronAPI`, `retryOperation` |
+| `src/utils.ts`                             | Remove deprecated `waitFor`                              |
+| Test files                                 | Update to test new functions                             |
 
 ### Phase 2 Implementation Order
 

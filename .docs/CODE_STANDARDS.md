@@ -60,7 +60,7 @@
 - Use higher-order functions (`map`, `filter`, `reduce`) over loops
 - Prefer function composition over inheritance
 - Keep functions small and focused on a single transformation
-- **Prefer recursion over imperative loops** for iterative operations
++- **Prefer recursion for naturally recursive problems** (tree traversal, backtracking), but use loops for simple iteration to avoid stack overflow risks
 
 ### FP Utilities (`src/lib/fp.ts`)
 
