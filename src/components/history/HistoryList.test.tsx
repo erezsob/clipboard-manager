@@ -77,7 +77,7 @@ describe("HistoryList", () => {
 
 		// The second item should have aria-current
 		const items = screen.getAllByRole("button", { name: /Test content/i });
-		expect(items[1]).toHaveAttribute("aria-current", "true");
+		expect(items[1]).toHaveAttribute("aria-current", "location");
 		expect(items[0]).not.toHaveAttribute("aria-current");
 		expect(items[2]).not.toHaveAttribute("aria-current");
 	});

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockHistoryItem } from "../../test/mocks/history";
 import { HistoryItem } from "./HistoryItem";
 
@@ -22,13 +23,7 @@ describe("HistoryItem", () => {
 		"item" | "isSelected"
 	>;
 
-	beforeEach(() => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-01-08T12:00:00.000Z"));
-	});
-
 	afterEach(() => {
-		vi.useRealTimers();
 		vi.clearAllMocks();
 	});
 
@@ -60,6 +55,10 @@ describe("HistoryItem", () => {
 	});
 
 	it("renders formatted date", () => {
+		// Use fake timers only for this test that needs specific date formatting
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-01-08T12:00:00.000Z"));
+
 		const itemJustNow = createMockHistoryItem({
 			created_at: new Date("2026-01-08T12:00:00.000Z").toISOString(),
 		});
@@ -69,6 +68,8 @@ describe("HistoryItem", () => {
 		);
 
 		expect(screen.getByText("Just now")).toBeInTheDocument();
+
+		vi.useRealTimers();
 	});
 
 	it("shows favorite star correctly when not favorited", () => {
@@ -97,7 +98,8 @@ describe("HistoryItem", () => {
 		expect(favoriteButton).toBeInTheDocument();
 	});
 
-	it("calls onItemClick when item is clicked", () => {
+	it("calls onItemClick when item is clicked", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -105,12 +107,13 @@ describe("HistoryItem", () => {
 		const itemElement = screen.getByRole("button", {
 			name: /Test clipboard content/i,
 		});
-		fireEvent.click(itemElement);
+		await user.click(itemElement);
 
 		expect(mockHandlers.onItemClick).toHaveBeenCalledWith(mockItem);
 	});
 
-	it("calls onToggleFavorite when star button is clicked", () => {
+	it("calls onToggleFavorite when star button is clicked", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -118,7 +121,7 @@ describe("HistoryItem", () => {
 		const favoriteButton = screen.getByRole("button", {
 			name: "Add to favorites",
 		});
-		fireEvent.click(favoriteButton);
+		await user.click(favoriteButton);
 
 		expect(mockHandlers.onToggleFavorite).toHaveBeenCalledWith(
 			expect.any(Object),
@@ -126,7 +129,8 @@ describe("HistoryItem", () => {
 		);
 	});
 
-	it("calls onDelete when trash button is clicked", () => {
+	it("calls onDelete when trash button is clicked", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -134,7 +138,7 @@ describe("HistoryItem", () => {
 		const deleteButton = screen.getByRole("button", {
 			name: "Delete this clipboard item",
 		});
-		fireEvent.click(deleteButton);
+		await user.click(deleteButton);
 
 		expect(mockHandlers.onDelete).toHaveBeenCalledWith(
 			expect.any(Object),
@@ -142,13 +146,13 @@ describe("HistoryItem", () => {
 		);
 	});
 
-	it("has aria-current true when isSelected is true", () => {
+	it("has aria-current location when isSelected is true", () => {
 		render(<HistoryItem item={mockItem} isSelected={true} {...mockHandlers} />);
 
 		const itemElement = screen.getByRole("button", {
 			name: /Test clipboard content/i,
 		});
-		expect(itemElement).toHaveAttribute("aria-current", "true");
+		expect(itemElement).toHaveAttribute("aria-current", "location");
 	});
 
 	it("does not have aria-current when isSelected is false", () => {
@@ -162,7 +166,8 @@ describe("HistoryItem", () => {
 		expect(itemElement).not.toHaveAttribute("aria-current");
 	});
 
-	it("handles Enter key press", () => {
+	it("handles Enter key press", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -170,12 +175,14 @@ describe("HistoryItem", () => {
 		const itemElement = screen.getByRole("button", {
 			name: /Test clipboard content/i,
 		});
-		fireEvent.keyDown(itemElement, { key: "Enter" });
+		itemElement.focus();
+		await user.keyboard("{Enter}");
 
 		expect(mockHandlers.onItemClick).toHaveBeenCalledWith(mockItem);
 	});
 
-	it("handles Space key press", () => {
+	it("handles Space key press", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -183,12 +190,14 @@ describe("HistoryItem", () => {
 		const itemElement = screen.getByRole("button", {
 			name: /Test clipboard content/i,
 		});
-		fireEvent.keyDown(itemElement, { key: " " });
+		itemElement.focus();
+		await user.keyboard(" ");
 
 		expect(mockHandlers.onItemClick).toHaveBeenCalledWith(mockItem);
 	});
 
-	it("does not call onItemClick for other key presses", () => {
+	it("does not call onItemClick for other key presses", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -196,12 +205,14 @@ describe("HistoryItem", () => {
 		const itemElement = screen.getByRole("button", {
 			name: /Test clipboard content/i,
 		});
-		fireEvent.keyDown(itemElement, { key: "Tab" });
+		itemElement.focus();
+		await user.keyboard("{Tab}");
 
 		expect(mockHandlers.onItemClick).not.toHaveBeenCalled();
 	});
 
-	it("copy button also triggers onItemClick", () => {
+	it("copy button also triggers onItemClick", async () => {
+		const user = userEvent.setup();
 		render(
 			<HistoryItem item={mockItem} isSelected={false} {...mockHandlers} />,
 		);
@@ -209,7 +220,7 @@ describe("HistoryItem", () => {
 		const copyButton = screen.getByRole("button", {
 			name: "Copy to clipboard",
 		});
-		fireEvent.click(copyButton);
+		await user.click(copyButton);
 
 		expect(mockHandlers.onItemClick).toHaveBeenCalledWith(mockItem);
 	});

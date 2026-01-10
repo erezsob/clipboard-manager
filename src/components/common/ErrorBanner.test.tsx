@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ErrorBanner } from "./ErrorBanner";
 
@@ -25,11 +26,12 @@ describe("ErrorBanner", () => {
 		).toBeInTheDocument();
 	});
 
-	it("calls onDismiss when dismiss button is clicked", () => {
+	it("calls onDismiss when dismiss button is clicked", async () => {
+		const user = userEvent.setup();
 		render(<ErrorBanner message="Error message" onDismiss={mockOnDismiss} />);
 
 		const dismissButton = screen.getByRole("button", { name: "Dismiss error" });
-		fireEvent.click(dismissButton);
+		await user.click(dismissButton);
 
 		expect(mockOnDismiss).toHaveBeenCalled();
 	});
