@@ -5,6 +5,5 @@
 		"type": true
 	},
 	"tags": ["-lintignore"],
-	"ignore": ["src/vite-env.d.ts", "electron/preload.ts"],
-	"ignoreDependencies": ["@electron/rebuild"]
+	"ignore": ["src/vite-env.d.ts", "electron/preload.ts"]
 }
