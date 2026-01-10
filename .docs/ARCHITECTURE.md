@@ -7,7 +7,7 @@
 - **Backend**: Electron (Node.js + TypeScript)
 - **Database**: SQLite (via `better-sqlite3`)
 - **State Management**: TanStack Query (`@tanstack/react-query`) for server state, React hooks for UI state
-- **Testing**: Not yet implemented (planned for Phase 7)
+- **Testing**: Vitest + React Testing Library (100+ tests)
 - **Build Tool**: Vite
 - **Linting/Formatting**: Biome
 - **Package Manager**: pnpm
@@ -59,6 +59,10 @@ mac-clipboard-manager/
 │   │   ├── db.ts        # Database operations
 │   │   ├── queryKeys.ts # TanStack Query key factory
 │   │   └── utils.ts     # Utility functions
+│   ├── test/            # Test infrastructure
+│   │   ├── setup.ts     # Global test setup
+│   │   ├── utils.tsx    # Test utilities
+│   │   └── mocks/       # Mock factories
 │   ├── types/           # TypeScript type definitions
 │   │   └── electron.d.ts # Electron API types
 │   └── main.tsx         # React entry point
@@ -180,4 +184,40 @@ Renderer Process          Main Process
 - **Production**: Loads from packaged `dist/index.html`
 - Migrations run automatically on app startup
 - Database stored in Electron's userData directory
+
+## Testing Architecture
+
+See [`.docs/TESTING.md`](./TESTING.md) for comprehensive testing documentation.
+
+### Test Infrastructure
+
+```bash
+src/test/
+├── setup.ts           # Global test setup, electronAPI mocks
+├── utils.tsx          # Test utilities (createTestQueryClient)
+└── mocks/
+    └── electronAPI.ts # Mock factory for window.electronAPI
+```
+
+### Test Categories
+
+- **Unit Tests**: Pure function tests (`*.test.ts`)
+- **Component Tests**: React component tests (`*.test.tsx`)
+- **Hook Integration Tests**: TanStack Query hook tests
+
+### Test Coverage
+
+Tests are co-located with source files:
+- `src/lib/utils.test.ts` - Utility function tests
+- `src/lib/db.test.ts` - Database layer tests
+- `src/components/**/*.test.tsx` - Component tests
+- `src/hooks/queries/*.test.tsx` - Hook tests
+
+### Running Tests
+
+```bash
+pnpm test           # Run all tests
+pnpm test:watch     # Watch mode
+pnpm test:coverage  # With coverage report
+```
 
