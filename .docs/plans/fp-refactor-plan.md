@@ -1,36 +1,58 @@
 ---
 name: Functional Programming Refactor
 overview: Introduce custom FP utilities (pipe, Result, Option) and refactor existing code to follow functional programming principles with immutability, pure functions, and declarative patterns.
+status: in_progress
 todos:
+  # Phase 1 (Foundation) - COMPLETED
   - id: create-fp-utils
     content: Create src/lib/fp.ts with pipe, pipeAsync, flow, Result, and Option types
-    status: pending
+    status: completed
   - id: create-errors
     content: Create src/lib/errors.ts with domain-specific error types (DbError, ClipboardError)
-    status: pending
+    status: completed
   - id: refactor-utils
     content: Refactor src/lib/utils.ts - recursive retryOperation returning Result
-    status: pending
+    status: completed
   - id: refactor-waitfor
     content: Refactor src/utils.ts - recursive waitFor returning Result
-    status: pending
+    status: completed
   - id: refactor-db
     content: Refactor src/lib/db.ts to return Result types from all operations
-    status: pending
+    status: completed
   - id: refactor-mutations
-    content: Extract pure transformation functions in useHistoryMutations.ts
-    status: pending
+    content: Extract pure transformation functions to src/hooks/queries/utils.ts
+    status: completed
   - id: refactor-clipboard-monitor
-    content: Extract pure change detection in useClipboardMonitor.ts
-    status: pending
+    content: Extract pure change detection to src/hooks/queries/utils.ts
+    status: completed
   - id: refactor-history-actions
     content: Update useHistoryActions.ts to work with Result types
-    status: pending
+    status: completed
   - id: refactor-electron-main
     content: Encapsulate state and extract pure functions in electron/main.ts
-    status: pending
+    status: completed
   - id: update-docs
     content: Expand FP guidelines in .docs/CODE_STANDARDS.md
+    status: completed
+
+  # Phase 2 (Migration) - PENDING
+  - id: migrate-history-query
+    content: Update useHistoryQuery.ts to use getHistoryResult and handle Result types
+    status: pending
+  - id: migrate-clipboard-monitor
+    content: Update useClipboardMonitor.ts to use addClipResult and waitForCondition
+    status: pending
+  - id: migrate-mutations
+    content: Update useHistoryMutations.ts to use Result-returning db functions
+    status: pending
+  - id: remove-deprecated-db
+    content: Remove deprecated functions from src/lib/db.ts
+    status: pending
+  - id: remove-deprecated-utils
+    content: Remove deprecated waitFor from src/utils.ts and retryOperation from src/lib/utils.ts
+    status: pending
+  - id: update-tests
+    content: Update tests to use new Result-returning functions
     status: pending
 ---
 
@@ -276,3 +298,109 @@ Expand Section 9 (Programming Paradigm) with:
 - Each refactored function should maintain the same external behavior
 - Run `pnpm types:check` and `pnpm lint` after each major change
 - Test clipboard operations manually after mutations refactor
+
+---
+
+## Phase 2: Complete Migration (Pending)
+
+Phase 1 created the FP foundation. Phase 2 completes the migration by updating all consumers to use the new Result-returning functions and removing deprecated code.
+
+### 8. Migrate useHistoryQuery.ts
+
+Update to use `getHistoryResult`:
+
+```typescript
+// Before
+const items = await getHistory({ ... });
+
+// After
+const result = await getHistoryResult({ ... });
+if (!result.ok) {
+  throw new Error(result.error.message); // or handle explicitly
+}
+const items = result.value;
+```
+
+### 9. Migrate useClipboardMonitor.ts
+
+Update to use `addClipResult` and `waitForCondition`:
+
+```typescript
+// Before
+await waitFor(() => window.electronAPI !== undefined);
+await addClip(change.value);
+
+// After
+const waitResult = await waitForCondition({ condition: () => window.electronAPI !== undefined });
+if (!waitResult.ok) {
+  console.error("API timeout:", waitResult.error.message);
+  return;
+}
+const addResult = await addClipResult(change.value);
+if (!addResult.ok) {
+  console.error("Failed to add clip:", addResult.error.message);
+}
+```
+
+### 10. Migrate useHistoryMutations.ts
+
+Update mutation functions to use Result-returning versions:
+
+```typescript
+// Before
+mutationFn: (itemId: number) => deleteHistoryItem(itemId),
+
+// After
+mutationFn: async (itemId: number) => {
+  const result = await deleteHistoryItemResult(itemId);
+  if (!result.ok) throw new Error(result.error.message);
+},
+```
+
+### 11. Remove Deprecated Functions
+
+Once all consumers are migrated:
+
+1. Remove from `src/lib/db.ts`:
+   - `addClip()`
+   - `getHistory()`
+   - `deleteHistoryItem()`
+   - `clearAllHistory()`
+   - `toggleFavorite()`
+
+2. Remove from `src/lib/utils.ts`:
+   - `waitForElectronAPI()`
+
+3. Remove from `src/utils.ts`:
+   - `waitFor()`
+
+4. Remove from `src/lib/utils.ts`:
+   - `retryOperation()`
+
+### 12. Update Tests
+
+- Update `src/lib/db.test.ts` to test Result-returning functions
+- Update `src/utils.test.ts` to test `waitForCondition`
+- Update `src/lib/utils.test.ts` to test `retryWithBackoff`
+- Consider keeping deprecated function tests during transition
+
+### Phase 2 Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/hooks/queries/useHistoryQuery.ts` | Use `getHistoryResult`, handle Result |
+| `src/hooks/queries/useClipboardMonitor.ts` | Use `addClipResult`, `waitForCondition` |
+| `src/hooks/queries/useHistoryMutations.ts` | Use Result-returning db functions |
+| `src/lib/db.ts` | Remove deprecated functions |
+| `src/lib/utils.ts` | Remove deprecated `waitForElectronAPI`, `retryOperation` |
+| `src/utils.ts` | Remove deprecated `waitFor` |
+| Test files | Update to test new functions |
+
+### Phase 2 Implementation Order
+
+1. Migrate `useHistoryQuery.ts` - standalone, low risk
+2. Migrate `useClipboardMonitor.ts` - uses `addClip` and `waitFor`
+3. Migrate `useHistoryMutations.ts` - uses delete/clear/toggle
+4. Update tests to cover new functions
+5. Remove deprecated functions
+6. Verify knip passes with no warnings
