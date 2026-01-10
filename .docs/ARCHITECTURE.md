@@ -191,7 +191,7 @@ See [`.docs/TESTING.md`](./TESTING.md) for comprehensive testing documentation.
 
 ### Test Infrastructure
 
-```
+```bash
 src/test/
 ├── setup.ts           # Global test setup, electronAPI mocks
 ├── utils.tsx          # Test utilities (createTestQueryClient)
