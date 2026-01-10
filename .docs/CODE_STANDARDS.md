@@ -76,6 +76,131 @@
   - Use React refs (`useRef`) instead for DOM access
   - Keep hooks pure by emitting callbacks rather than manipulating DOM directly
 
+## 11. Testing Standards
+
+> "The more your tests resemble the way your software is used, the more confidence they can give you." — Kent C. Dodds
+
+See also: [`.docs/TESTING.md`](./TESTING.md) for testing patterns and examples.
+
+### Core Philosophy: Write tests. Not too many. Mostly integration.
+
+- **Write tests for confidence**, not for coverage metrics
+- **Integration tests provide the best ROI** — balance between confidence and speed/cost
+- **Don't chase 100% coverage** — diminishing returns beyond ~70-80%
+- **Test use cases, not code** — think about what the code does, not how it does it
+
+### The Testing Trophy (Priority Order)
+
+1. **Static Analysis** — TypeScript, ESLint, Biome (catches bugs at compile time)
+2. **Unit Tests** — Pure functions, utilities, isolated logic
+3. **Integration Tests** — Components with their dependencies, hooks with mocked APIs
+4. **E2E Tests** — Critical user flows (highest confidence, highest cost)
+
+### Avoid Testing Implementation Details
+
+Implementation details cause:
+- **False negatives**: Tests break when you refactor (even though the app works)
+- **False positives**: Tests pass when the app is broken
+
+**What NOT to test directly:**
+- Internal component state
+- Lifecycle methods / hook internals
+- Private methods or functions
+- CSS class names or DOM structure
+
+**What TO test:**
+- User interactions (clicks, typing, navigation)
+- Rendered output visible to users
+- Props passed by developers
+- Observable side effects (API calls, callbacks)
+
+### Query Priority (React Testing Library)
+
+Use queries in this order of preference:
+
+1. **`getByRole`** — Accessible to everyone, works with screen readers
+2. **`getByLabelText`** — Best for form fields
+3. **`getByPlaceholderText`** — When label isn't available
+4. **`getByText`** — For non-interactive elements
+5. **`getByDisplayValue`** — For filled form inputs
+6. **`getByAltText`** — For images
+7. **`getByTitle`** — Less reliable across browsers
+8. **`getByTestId`** — **Last resort only** — users can't see these
+
+```typescript
+// ❌ Bad - testing implementation details
+screen.getByTestId('submit-button')
+container.querySelector('.btn-primary')
+
+// ✅ Good - testing like a user
+screen.getByRole('button', { name: /submit/i })
+screen.getByLabelText('Username')
+```
+
+### Testing Library Best Practices
+
+```typescript
+// ✅ Use screen for queries
+render(<Component />)
+const button = screen.getByRole('button')
+
+// ✅ Use find* for async elements (not waitFor + get*)
+const alert = await screen.findByRole('alert')
+
+// ✅ Use query* ONLY for asserting non-existence
+expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+// ✅ Use jest-dom matchers for better error messages
+expect(button).toBeDisabled()
+expect(element).toBeInTheDocument()
+
+// ✅ Use fireEvent for simple interactions
+fireEvent.click(button)
+fireEvent.change(input, { target: { value: 'hello' } })
+
+// ✅ Make assertions explicit
+expect(screen.getByRole('alert')).toBeInTheDocument()
+```
+
+### What to Avoid
+
+```typescript
+// ❌ Don't wrap render/fireEvent in act (they already do it)
+act(() => { render(<Component />) })
+
+// ❌ Don't pass empty callbacks to waitFor
+await waitFor(() => {})
+
+// ❌ Don't perform side-effects inside waitFor
+await waitFor(() => {
+  fireEvent.click(button)  // Side effect!
+  expect(result).toBe(true)
+})
+
+// ❌ Don't put multiple assertions in waitFor
+await waitFor(() => {
+  expect(a).toBe(1)
+  expect(b).toBe(2)
+})
+
+// ✅ Do this instead
+fireEvent.click(button)
+await waitFor(() => expect(result).toBe(true))
+```
+
+### How to Know What to Test
+
+1. **Ask: "What would be bad if it broke?"** — Prioritize critical user flows
+2. **Consider your two users**: End-users and developers
+3. **Write tests for use cases**, not for code paths
+4. **Use code coverage to find missing use cases**, not as a goal
+
+### Mocking Guidelines
+
+- **Mock at system boundaries** — External APIs, databases, file system
+- **Don't mock too much** — Every mock reduces confidence in integration
+- **Mock the electron API** — Use `window.electronAPI` mocks for database/clipboard
+
 ## Code Review Checklist
 
 - [ ] All constants extracted
@@ -90,4 +215,6 @@
 - [ ] Follow best practices
 - [ ] No direct DOM manipulation (use refs instead)
 - [ ] Named exports used (no default exports)
+- [ ] Tests cover use cases, not implementation details
+- [ ] Tests use appropriate queries (prefer `*ByRole`)
 

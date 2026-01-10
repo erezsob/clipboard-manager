@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_TEXT_DISPLAY_LENGTH } from "./constants";
-import { formatDate, hasMoreItems, retryOperation, truncateText } from "./utils";
+import {
+	formatDate,
+	hasMoreItems,
+	retryOperation,
+	truncateText,
+} from "./utils";
 
 describe("formatDate", () => {
 	beforeEach(() => {

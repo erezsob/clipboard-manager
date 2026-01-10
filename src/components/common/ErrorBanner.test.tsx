@@ -18,9 +18,7 @@ describe("ErrorBanner", () => {
 	});
 
 	it("renders dismiss button", () => {
-		render(
-			<ErrorBanner message="Error message" onDismiss={mockOnDismiss} />,
-		);
+		render(<ErrorBanner message="Error message" onDismiss={mockOnDismiss} />);
 
 		expect(
 			screen.getByRole("button", { name: "Dismiss error" }),
@@ -28,9 +26,7 @@ describe("ErrorBanner", () => {
 	});
 
 	it("calls onDismiss when dismiss button is clicked", () => {
-		render(
-			<ErrorBanner message="Error message" onDismiss={mockOnDismiss} />,
-		);
+		render(<ErrorBanner message="Error message" onDismiss={mockOnDismiss} />);
 
 		const dismissButton = screen.getByRole("button", { name: "Dismiss error" });
 		fireEvent.click(dismissButton);
@@ -45,9 +41,7 @@ describe("ErrorBanner", () => {
 
 		expect(screen.getByText("First error")).toBeInTheDocument();
 
-		rerender(
-			<ErrorBanner message="Second error" onDismiss={mockOnDismiss} />,
-		);
+		rerender(<ErrorBanner message="Second error" onDismiss={mockOnDismiss} />);
 
 		expect(screen.getByText("Second error")).toBeInTheDocument();
 		expect(screen.queryByText("First error")).not.toBeInTheDocument();

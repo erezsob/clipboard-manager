@@ -17,7 +17,10 @@ describe("HistoryItem", () => {
 		onItemClick: vi.fn(),
 		onToggleFavorite: vi.fn(),
 		onDelete: vi.fn(),
-	} as const satisfies Omit<ComponentProps<typeof HistoryItem>, "item" | "isSelected">;
+	} as const satisfies Omit<
+		ComponentProps<typeof HistoryItem>,
+		"item" | "isSelected"
+	>;
 
 	beforeEach(() => {
 		vi.useFakeTimers();
