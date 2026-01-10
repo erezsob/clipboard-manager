@@ -162,6 +162,48 @@ pnpm test:e2e
 - Aim for 80%+ coverage on critical paths
 - Focus on database operations, clipboard logic, core UI interactions
 
+## CI/CD Pipeline
+
+### GitHub Actions CI
+
+The project uses GitHub Actions for continuous integration. The CI workflow runs on every push to `main` and on pull requests targeting `main`.
+
+**Workflow File**: `.github/workflows/ci.yml`
+
+### CI Jobs
+
+All jobs run in parallel on `ubuntu-latest` with Node.js 24 and pnpm 9:
+
+| Job | Description | Command |
+|-----|-------------|---------|
+| **Lint** | Biome linting | `pnpm biome check` |
+| **Format** | Code formatting check | `pnpm biome format --check` |
+| **Type Check** | TypeScript validation | `pnpm types:check` |
+| **Unused Code Check** | Knip detection | `pnpm knip` |
+| **Test** | Vitest test suite | `pnpm test` |
+
+### Configuration Details
+
+- **Triggers**: Push to `main`, pull requests to `main`
+- **Concurrency**: Automatically cancels in-progress runs when new commits are pushed
+- **Caching**: pnpm dependencies are cached for faster subsequent runs
+- **Lockfile**: Uses `--frozen-lockfile` to ensure reproducible builds
+
+### Running CI Checks Locally
+
+Before pushing, you can run the same checks locally:
+
+```bash
+# Run all checks (same as CI)
+pnpm biome check          # Lint
+pnpm biome format --check # Format check
+pnpm types:check          # TypeScript
+pnpm knip                 # Unused code
+pnpm test                 # Tests
+```
+
+The pre-push hook will also run these checks automatically.
+
 ## Git Workflow
 
 ### Branch Strategy

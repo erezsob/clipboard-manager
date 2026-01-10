@@ -32,7 +32,7 @@
 
 - Settings/preferences window
 - E2E testing with Playwright
-- CI/CD pipeline (GitHub Actions)
+- Release workflow (GitHub Actions)
 
 ## Implementation Phases
 
@@ -167,22 +167,20 @@
 9. ✅ Document hook behavior in README
 10. ✅ Add note about `--no-verify` bypass option for emergencies
 
-### Phase 9: CI/CD Pipeline (Priority: Medium)
-1. 🔨 Create `.github/workflows/` directory
-2. 🔨 Create `ci.yml` workflow for pull requests:
-   - Trigger on pull_request to main branch
-   - Run on ubuntu-latest
-   - Set up Node.js with pnpm
-   - Cache pnpm dependencies
-   - Install dependencies (`pnpm install`)
-   - Run linting (`pnpm lint`)
-   - Run formatting check (`pnpm format --check`)
+### Phase 9: CI/CD Pipeline (Priority: Medium) - Partial ✅
+1. ✅ Create `.github/workflows/` directory
+2. ✅ Create `ci.yml` workflow for pull requests and pushes to main:
+   - Trigger on push to main and pull_request to main
+   - Run on ubuntu-latest with Node.js 24
+   - Set up pnpm with dependency caching
+   - Install dependencies (`pnpm install --frozen-lockfile`)
+   - Run linting (`pnpm biome check`)
+   - Run formatting check (`pnpm biome format --check`)
    - Run TypeScript type checking (`pnpm types:check`)
    - Run Knip unused code detection (`pnpm knip`)
-3. 🔨 Add test job to CI workflow (after Phase 7):
-   - Run unit tests (`pnpm test`)
-   - Run integration tests
-   - Upload coverage reports
+   - Concurrency settings to cancel in-progress runs
+3. ✅ Add test job to CI workflow:
+   - Run unit/component tests (`pnpm test`)
 4. 🔨 Create `release.yml` workflow for releases (optional):
    - Trigger on push to main or tags
    - Build Electron app for macOS
@@ -192,7 +190,7 @@
    - Require CI checks to pass before merge
    - Require PR reviews (optional for personal project)
 7. 🔨 Set up Dependabot for dependency updates (optional)
-8. 🔨 Document CI/CD workflow in `.docs/`
+8. ✅ Document CI/CD workflow in `.docs/WORKFLOW.md`
 
 ### Phase 10: Functional Programming Refactor (Priority: Medium)
 **Plan Document**: [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md)
