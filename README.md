@@ -130,6 +130,20 @@ git push --no-verify
 
 **Note**: It's recommended to fix any issues rather than bypassing the hook, as these checks help maintain code quality and prevent broken code from being pushed.
 
+### CI Pipeline
+
+GitHub Actions runs automated checks on every push to `main` and on pull requests. The CI pipeline includes 5 parallel jobs:
+
+| Job | Description |
+|-----|-------------|
+| **Lint** | Biome linting (`pnpm biome check`) |
+| **Format** | Code formatting check (`pnpm biome format --check`) |
+| **Type Check** | TypeScript validation (`pnpm types:check`) |
+| **Unused Code** | Knip detection (`pnpm knip`) |
+| **Test** | Vitest test suite (`pnpm test`) |
+
+See [.docs/WORKFLOW.md](.docs/WORKFLOW.md) for more details.
+
 ## Project Structure
 
 ```
