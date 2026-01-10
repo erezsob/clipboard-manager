@@ -128,7 +128,7 @@ export const maxRetriesExceeded = (
 	lastError?: unknown,
 ): WaitError => ({
 	type: "MAX_RETRIES_EXCEEDED",
-	message: `Operation failed after ${attempts} retry attempts`,
+	message: `Operation failed after ${attempts} retry ${attempts === 1 ? 'attempt' : 'attempts'}`,
 	attempts,
 	lastError,
 });

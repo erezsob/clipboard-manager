@@ -203,7 +203,7 @@ describe("retryOperation", () => {
 
 		expect(rejectionError).toBeDefined();
 		expect(rejectionError?.message).toBe(
-			"Operation failed after 1 retry attempts",
+			"Operation failed after 1 retry attempt",
 		);
 		expect(operation).toHaveBeenCalledTimes(1);
 	});
@@ -222,7 +222,7 @@ describe("retryOperation", () => {
 
 		expect(rejectionError).toBeDefined();
 		expect(rejectionError?.message).toBe(
-			"Operation failed after 1 retry attempts",
+			"Operation failed after 1 retry attempt",
 		);
 	});
 });
