@@ -38,6 +38,7 @@ export function HistoryItem({
 			}}
 			role="button"
 			tabIndex={0}
+			aria-current={isSelected ? "true" : undefined}
 			className={`
 				group relative p-3 rounded-lg cursor-pointer transition-all duration-150
 				${

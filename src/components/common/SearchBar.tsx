@@ -53,6 +53,7 @@ export function SearchBar({
 				<button
 					type="button"
 					onClick={onFavoritesToggle}
+					aria-pressed={favoritesOnly}
 					className={`
 						p-2 rounded-lg transition-colors
 						${
