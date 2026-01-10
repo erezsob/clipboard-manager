@@ -150,7 +150,9 @@ describe("retryOperation", () => {
 		await promise;
 
 		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe("Operation failed after 3 retry attempts");
+		expect(rejectionError?.message).toBe(
+			"Operation failed after 3 retry attempts",
+		);
 		expect(operation).toHaveBeenCalledTimes(3);
 	});
 
@@ -200,7 +202,9 @@ describe("retryOperation", () => {
 		await promise;
 
 		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe("Operation failed after 1 retry attempts");
+		expect(rejectionError?.message).toBe(
+			"Operation failed after 1 retry attempts",
+		);
 		expect(operation).toHaveBeenCalledTimes(1);
 	});
 
@@ -217,7 +221,9 @@ describe("retryOperation", () => {
 		await promise;
 
 		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe("Operation failed after 1 retry attempts");
+		expect(rejectionError?.message).toBe(
+			"Operation failed after 1 retry attempts",
+		);
 	});
 });
 

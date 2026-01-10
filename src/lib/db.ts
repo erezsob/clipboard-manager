@@ -10,8 +10,6 @@ export interface HistoryItem {
 	is_favorite: number;
 }
 
-
-
 export interface GetHistoryOptions {
 	query?: string;
 	limit?: number;

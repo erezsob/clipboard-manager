@@ -72,7 +72,8 @@ export const buildHistoryQuery = (options: {
 		conditions.push("is_favorite = 1");
 	}
 
-	const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
+	const whereClause =
+		conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
 	const sql = `SELECT id, content, type, created_at, is_favorite FROM history${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
 	params.push(limit, offset);
@@ -238,7 +239,9 @@ const createWindowModule = () => {
 /**
  * Creates a tray module with encapsulated state.
  */
-const createTrayModule = (windowModule: ReturnType<typeof createWindowModule>) => {
+const createTrayModule = (
+	windowModule: ReturnType<typeof createWindowModule>,
+) => {
 	let tray: Tray | null = null;
 
 	const create = (): void => {
@@ -298,7 +301,8 @@ const createTrayModule = (windowModule: ReturnType<typeof createWindowModule>) =
  */
 const createClipboardHandlers = () => ({
 	readText: () => clipboard.readText(),
-	writeText: (_event: Electron.IpcMainInvokeEvent, text: string) => clipboard.writeText(text),
+	writeText: (_event: Electron.IpcMainInvokeEvent, text: string) =>
+		clipboard.writeText(text),
 });
 
 /**
@@ -331,7 +335,10 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 			return;
 		}
 
-		db.prepare("INSERT INTO history (content, type) VALUES (?, ?)").run(text, "text");
+		db.prepare("INSERT INTO history (content, type) VALUES (?, ?)").run(
+			text,
+			"text",
+		);
 	},
 
 	deleteHistoryItem: (_event: Electron.IpcMainInvokeEvent, id: number) => {
@@ -346,11 +353,13 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 
 	toggleFavorite: (_event: Electron.IpcMainInvokeEvent, id: number) => {
 		const db = dbModule.getDb();
-		db.prepare("UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?").run(id);
+		db.prepare(
+			"UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?",
+		).run(id);
 		// Return the new favorite state
-		const result = db.prepare("SELECT is_favorite FROM history WHERE id = ?").get(id) as
-			| { is_favorite: number }
-			| undefined;
+		const result = db
+			.prepare("SELECT is_favorite FROM history WHERE id = ?")
+			.get(id) as { is_favorite: number } | undefined;
 		return result ? Boolean(result.is_favorite) : false;
 	},
 });
@@ -358,7 +367,9 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 /**
  * Creates window IPC handlers
  */
-const createWindowHandlers = (windowModule: ReturnType<typeof createWindowModule>) => ({
+const createWindowHandlers = (
+	windowModule: ReturnType<typeof createWindowModule>,
+) => ({
 	center: () => windowModule.center(),
 	show: () => windowModule.show(),
 	hide: () => windowModule.hide(),
@@ -411,7 +422,9 @@ app.whenReady().then(() => {
 	registerIpcHandlers();
 
 	// Register global shortcut Cmd+Shift+V (or Ctrl+Shift+V on Windows/Linux)
-	globalShortcut.register("CommandOrControl+Shift+V", () => windowModule.toggle());
+	globalShortcut.register("CommandOrControl+Shift+V", () =>
+		windowModule.toggle(),
+	);
 
 	app.on("activate", () => {
 		if (BrowserWindow.getAllWindows().length === 0) {

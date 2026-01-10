@@ -45,7 +45,10 @@ export function useClipboardMonitor() {
 			try {
 				const result = await waitForElectronAPIResult();
 				if (!result.ok) {
-					console.error("Failed to wait for electron API:", result.error.message);
+					console.error(
+						"Failed to wait for electron API:",
+						result.error.message,
+					);
 					return;
 				}
 

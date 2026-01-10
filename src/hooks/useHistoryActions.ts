@@ -5,7 +5,11 @@ import {
 	useDeleteItemMutation,
 	useToggleFavoriteMutation,
 } from "./queries";
-import { calculateIndexAfterDelete, formatActionError, writeToClipboardWithRetry } from "./queries/utils";
+import {
+	calculateIndexAfterDelete,
+	formatActionError,
+	writeToClipboardWithRetry,
+} from "./queries/utils";
 
 interface UseHistoryActionsOptions {
 	/** Current filtered history array for index calculations */

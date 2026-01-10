@@ -7,23 +7,44 @@
  */
 export type DbError =
 	| { readonly type: "DB_NOT_READY"; readonly message: string }
-	| { readonly type: "QUERY_FAILED"; readonly message: string; readonly cause?: unknown }
+	| {
+			readonly type: "QUERY_FAILED";
+			readonly message: string;
+			readonly cause?: unknown;
+	  }
 	| { readonly type: "TIMEOUT"; readonly message: string };
 
 /**
  * Clipboard operation errors
  */
 export type ClipboardError =
-	| { readonly type: "READ_FAILED"; readonly message: string; readonly cause?: unknown }
-	| { readonly type: "WRITE_FAILED"; readonly message: string; readonly cause?: unknown }
+	| {
+			readonly type: "READ_FAILED";
+			readonly message: string;
+			readonly cause?: unknown;
+	  }
+	| {
+			readonly type: "WRITE_FAILED";
+			readonly message: string;
+			readonly cause?: unknown;
+	  }
 	| { readonly type: "API_NOT_AVAILABLE"; readonly message: string };
 
 /**
  * Wait/timeout operation errors
  */
 export type WaitError =
-	| { readonly type: "CONDITION_TIMEOUT"; readonly message: string; readonly attempts: number }
-	| { readonly type: "MAX_RETRIES_EXCEEDED"; readonly message: string; readonly attempts: number; readonly lastError?: unknown };
+	| {
+			readonly type: "CONDITION_TIMEOUT";
+			readonly message: string;
+			readonly attempts: number;
+	  }
+	| {
+			readonly type: "MAX_RETRIES_EXCEEDED";
+			readonly message: string;
+			readonly attempts: number;
+			readonly lastError?: unknown;
+	  };
 
 // ============================================================================
 // Error Constructors
@@ -49,7 +70,9 @@ export const queryFailed = (message: string, cause?: unknown): DbError => ({
 /**
  * Creates a DB TIMEOUT error
  */
-export const dbTimeout = (message = "Database operation timed out"): DbError => ({
+export const dbTimeout = (
+	message = "Database operation timed out",
+): DbError => ({
 	type: "TIMEOUT",
 	message,
 });
@@ -57,7 +80,10 @@ export const dbTimeout = (message = "Database operation timed out"): DbError => 
 /**
  * Creates a READ_FAILED clipboard error
  */
-export const clipboardReadFailed = (message: string, cause?: unknown): ClipboardError => ({
+export const clipboardReadFailed = (
+	message: string,
+	cause?: unknown,
+): ClipboardError => ({
 	type: "READ_FAILED",
 	message,
 	cause,
@@ -66,7 +92,10 @@ export const clipboardReadFailed = (message: string, cause?: unknown): Clipboard
 /**
  * Creates a WRITE_FAILED clipboard error
  */
-export const clipboardWriteFailed = (message: string, cause?: unknown): ClipboardError => ({
+export const clipboardWriteFailed = (
+	message: string,
+	cause?: unknown,
+): ClipboardError => ({
 	type: "WRITE_FAILED",
 	message,
 	cause,

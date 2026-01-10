@@ -233,8 +233,9 @@ export const getOrElse = <T>(option: Option<T>, defaultValue: T): T =>
 /**
  * Checks if an Option contains a value
  */
-export const isSome = <T>(option: Option<T>): option is { some: true; value: T } =>
-	option.some;
+export const isSome = <T>(
+	option: Option<T>,
+): option is { some: true; value: T } => option.some;
 
 /**
  * Checks if an Option is empty

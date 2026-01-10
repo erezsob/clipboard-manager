@@ -141,7 +141,9 @@ export function hasMoreItems(resultsCount: number, batchSize: number): boolean {
  * Waits for the Electron API to be available.
  * Returns a Result indicating success or timeout.
  */
-export async function waitForElectronAPIResult(): Promise<Result<void, DbError>> {
+export async function waitForElectronAPIResult(): Promise<
+	Result<void, DbError>
+> {
 	const result = await waitForCondition({
 		condition: () => window.electronAPI !== undefined,
 	});
