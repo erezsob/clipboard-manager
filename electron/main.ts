@@ -194,6 +194,10 @@ const createWindowModule = () => {
 		});
 
 		mainWindow.on("closed", () => {
+			if (blurTimeout) {
+				clearTimeout(blurTimeout);
+				blurTimeout = null;
+			}
 			mainWindow = null;
 		});
 	};
