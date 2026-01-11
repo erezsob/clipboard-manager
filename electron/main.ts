@@ -67,10 +67,10 @@ export const isEmptyText = (text: string | null | undefined): boolean =>
 	!text || text.trim().length === 0;
 
 /**
- * Maximum allowed clipboard content size (1MB).
+ * Maximum allowed clipboard content characters.
  * Prevents storing excessively large content.
  */
-const MAX_CLIP_SIZE = 1_000_000;
+const MAX_CLIP_CHARS = 1_000_000;
 
 /**
  * Validates that an id is a positive integer.
@@ -422,9 +422,9 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 		if (isEmptyText(text)) return;
 
 		// Validate text length
-		if (text.length > MAX_CLIP_SIZE) {
+		if (text.length > MAX_CLIP_CHARS) {
 			throw new Error(
-				`Clipboard content too large: ${text.length} bytes (max: ${MAX_CLIP_SIZE})`,
+				`Clipboard content too large: ${text.length} bytes (max: ${MAX_CLIP_CHARS})`,
 			);
 		}
 
