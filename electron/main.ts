@@ -94,8 +94,13 @@ const createDbModule = () => {
 	let db: Database.Database | null = null;
 
 	const init = (dbPath: string): void => {
-		db = new Database(dbPath);
-		runMigrations(db);
+		try {
+			db = new Database(dbPath);
+			runMigrations(db);
+		} catch (error) {
+			console.error('Failed to initialize database:', error);
+			throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
 	};
 
 	const getDb = (): Database.Database => {
