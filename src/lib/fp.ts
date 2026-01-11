@@ -354,10 +354,10 @@ export async function pipeAsync(
 
 /**
  * Creates a reusable composed function from left to right.
- * Unlike pipe, flow doesn't take an initial value - it returns a function.
+ * Unlike pipe, compose doesn't take an initial value - it returns a function.
  *
  * @example
- * const processName = flow(
+ * const processName = compose(
  *   (s: string) => s.trim(),
  *   (s) => s.toLowerCase(),
  *   (s) => s.replace(/\s+/g, "-")
@@ -365,27 +365,27 @@ export async function pipeAsync(
  *
  * processName(" Hello World ")  // "hello-world"
  */
-export function flow<A, B>(ab: (a: A) => B): (a: A) => B;
-export function flow<A, B, C>(ab: (a: A) => B, bc: (b: B) => C): (a: A) => C;
-export function flow<A, B, C, D>(
+export function compose<A, B>(ab: (a: A) => B): (a: A) => B;
+export function compose<A, B, C>(ab: (a: A) => B, bc: (b: B) => C): (a: A) => C;
+export function compose<A, B, C, D>(
 	ab: (a: A) => B,
 	bc: (b: B) => C,
 	cd: (c: C) => D,
 ): (a: A) => D;
-export function flow<A, B, C, D, E>(
+export function compose<A, B, C, D, E>(
 	ab: (a: A) => B,
 	bc: (b: B) => C,
 	cd: (c: C) => D,
 	de: (d: D) => E,
 ): (a: A) => E;
-export function flow<A, B, C, D, E, F>(
+export function compose<A, B, C, D, E, F>(
 	ab: (a: A) => B,
 	bc: (b: B) => C,
 	cd: (c: C) => D,
 	de: (d: D) => E,
 	ef: (e: E) => F,
 ): (a: A) => F;
-export function flow(
+export function compose(
 	...fns: Array<(arg: unknown) => unknown>
 ): (arg: unknown) => unknown {
 	return (value: unknown) => fns.reduce((acc, fn) => fn(acc), value);
