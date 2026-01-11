@@ -6,12 +6,12 @@ import { historyKeys } from "../../lib/queryKeys";
 import { createMockHistoryItems } from "../../test/mocks/history";
 import { getMockElectronAPI } from "../../test/setup";
 import { createTestQueryClient } from "../../test/utils";
-import type { InfiniteHistoryData } from "./types";
+import type { InfiniteHistoryData } from "../queries/types";
 import {
 	useClearHistoryMutation,
 	useDeleteItemMutation,
 	useToggleFavoriteMutation,
-} from "./useHistoryMutations";
+} from "./history";
 
 describe("useDeleteItemMutation", () => {
 	const createWrapper = (queryClient = createTestQueryClient()) => {
@@ -215,6 +215,9 @@ describe("useToggleFavoriteMutation", () => {
 		const mockApi = getMockElectronAPI();
 		mockApi.db.toggleFavorite.mockRejectedValue(new Error("Toggle failed"));
 
+		// Suppress expected console.error output
+		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
 		const queryClient = createTestQueryClient();
 		const mockItems = createMockHistoryItems(3);
 		mockItems[0].is_favorite = 0;
@@ -247,6 +250,8 @@ describe("useToggleFavoriteMutation", () => {
 			);
 			expect(cachedData?.pages[0].items[0].is_favorite).toBe(0);
 		});
+
+		consoleSpy.mockRestore();
 	});
 });
 

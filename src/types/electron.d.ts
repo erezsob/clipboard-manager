@@ -6,12 +6,12 @@ interface ElectronAPI {
 		writeText: (text: string) => Promise<void>;
 	};
 	db: {
-		getHistory: (
-			query?: string,
-			limit?: number,
-			favoritesOnly?: boolean,
-			offset?: number,
-		) => Promise<
+		getHistory: (options?: {
+			query?: string;
+			limit?: number;
+			favoritesOnly?: boolean;
+			offset?: number;
+		}) => Promise<
 			Array<{
 				id: number;
 				content: string;

@@ -1,4 +1,6 @@
-import { waitFor } from "../utils";
+import { type DbError, queryFailed } from "./errors";
+import { type Result, tryCatchAsync } from "./fp";
+import { waitForElectronAPIResult } from "./utils";
 
 export interface HistoryItem {
 	id: number;
@@ -6,18 +8,6 @@ export interface HistoryItem {
 	type: string;
 	created_at: string;
 	is_favorite: number;
-}
-
-async function waitForElectronAPI() {
-	await waitFor(() => window.electronAPI !== undefined);
-}
-
-/**
- * Add a clipboard entry if it's different from the most recent entry
- */
-export async function addClip(text: string) {
-	await waitForElectronAPI();
-	await window.electronAPI.db.addClip(text);
 }
 
 export interface GetHistoryOptions {
@@ -28,34 +18,86 @@ export interface GetHistoryOptions {
 }
 
 /**
- * Get history items with pagination support
+ * Get history items with pagination support.
+ * Returns a Result for explicit error handling.
  */
-export async function getHistory(options: GetHistoryOptions = {}) {
-	const { query, limit = 50, favoritesOnly = false, offset = 0 } = options;
-	await waitForElectronAPI();
-	return window.electronAPI.db.getHistory(query, limit, favoritesOnly, offset);
+export async function getHistoryResult(
+	options: GetHistoryOptions = {},
+): Promise<Result<HistoryItem[], DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(
+		() => window.electronAPI.db.getHistory(options),
+		(error) => queryFailed("Failed to get history", error),
+	);
 }
 
 /**
- * Delete a history item by ID
+ * Delete a history item by ID.
+ * Returns a Result for explicit error handling.
  */
-export async function deleteHistoryItem(id: number) {
-	await waitForElectronAPI();
-	window.electronAPI.db.deleteHistoryItem(id);
+export async function deleteHistoryItemResult(
+	id: number,
+): Promise<Result<void, DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(
+		async () => {
+			await window.electronAPI.db.deleteHistoryItem(id);
+		},
+		(error) => queryFailed("Failed to delete history item", error),
+	);
 }
 
 /**
- * Clear all history
+ * Clear all history.
+ * Returns a Result for explicit error handling.
  */
-export async function clearAllHistory() {
-	await waitForElectronAPI();
-	window.electronAPI.db.clearAllHistory();
+export async function clearAllHistoryResult(): Promise<Result<void, DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(
+		async () => {
+			await window.electronAPI.db.clearAllHistory();
+		},
+		(error) => queryFailed("Failed to clear all history", error),
+	);
 }
 
 /**
- * Toggle favorite status of a history item
+ * Toggle favorite status of a history item.
+ * Returns a Result containing the new favorite state.
  */
-export async function toggleFavorite(id: number): Promise<boolean> {
-	await waitForElectronAPI();
-	return window.electronAPI.db.toggleFavorite(id);
+export async function toggleFavoriteResult(
+	id: number,
+): Promise<Result<boolean, DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(
+		() => window.electronAPI.db.toggleFavorite(id),
+		(error) => queryFailed("Failed to toggle favorite", error),
+	);
+}
+
+/**
+ * Add a clipboard entry to the database.
+ * Deduplication is performed in the database layer (electron/main.ts).
+ * Returns a Result for explicit error handling.
+ */
+export async function addClipResult(
+	text: string,
+): Promise<Result<void, DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(
+		async () => {
+			await window.electronAPI.db.addClip(text);
+		},
+		(error) => queryFailed("Failed to add clip", error),
+	);
 }

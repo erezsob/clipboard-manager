@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockHistoryItems } from "../test/mocks/history";
 import { getMockElectronAPI } from "../test/setup";
 import {
-	addClip,
-	clearAllHistory,
-	deleteHistoryItem,
-	getHistory,
-	toggleFavorite,
+	addClipResult,
+	clearAllHistoryResult,
+	deleteHistoryItemResult,
+	getHistoryResult,
+	toggleFavoriteResult,
 } from "./db";
 
 describe("db", () => {
@@ -14,142 +14,213 @@ describe("db", () => {
 		vi.clearAllMocks();
 	});
 
-	describe("addClip", () => {
-		it("calls electronAPI.db.addClip with text", async () => {
+	describe("addClipResult", () => {
+		it("returns ok result when successful", async () => {
 			const mockApi = getMockElectronAPI();
 
-			await addClip("test content");
+			const result = await addClipResult("test content");
 
+			expect(result.ok).toBe(true);
 			expect(mockApi.db.addClip).toHaveBeenCalledWith("test content");
+		});
+
+		it("returns error result when API call fails", async () => {
+			const mockApi = getMockElectronAPI();
+			mockApi.db.addClip.mockRejectedValue(new Error("Add failed"));
+
+			const result = await addClipResult("test content");
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error.type).toBe("QUERY_FAILED");
+				expect(result.error.message).toBe("Failed to add clip");
+			}
+			expect.assertions(3);
 		});
 	});
 
-	describe("getHistory", () => {
-		it("calls electronAPI.db.getHistory with default options", async () => {
+	describe("getHistoryResult", () => {
+		it("returns ok result with items when successful", async () => {
 			const mockApi = getMockElectronAPI();
 			const mockItems = createMockHistoryItems(3);
 			mockApi.db.getHistory.mockResolvedValue(mockItems);
 
-			const result = await getHistory();
+			const result = await getHistoryResult();
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				50,
-				false,
-				0,
-			);
-			expect(result).toEqual(mockItems);
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.value).toEqual(mockItems);
+			}
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({});
+			expect.assertions(3);
 		});
 
 		it("passes query parameter correctly", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.getHistory.mockResolvedValue([]);
 
-			await getHistory({ query: "search term" });
+			await getHistoryResult({ query: "search term" });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				"search term",
-				50,
-				false,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+				query: "search term",
+			});
 		});
 
 		it("passes limit parameter correctly", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.getHistory.mockResolvedValue([]);
 
-			await getHistory({ limit: 100 });
+			await getHistoryResult({ limit: 100 });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				100,
-				false,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({ limit: 100 });
 		});
 
 		it("passes favoritesOnly parameter correctly", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.getHistory.mockResolvedValue([]);
 
-			await getHistory({ favoritesOnly: true });
+			await getHistoryResult({ favoritesOnly: true });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				50,
-				true,
-				0,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+				favoritesOnly: true,
+			});
 		});
 
 		it("passes offset parameter correctly", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.getHistory.mockResolvedValue([]);
 
-			await getHistory({ offset: 50 });
+			await getHistoryResult({ offset: 50 });
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith(
-				undefined,
-				50,
-				false,
-				50,
-			);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({ offset: 50 });
 		});
 
 		it("passes all parameters correctly", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.getHistory.mockResolvedValue([]);
 
-			await getHistory({
+			await getHistoryResult({
 				query: "test",
 				limit: 25,
 				favoritesOnly: true,
 				offset: 100,
 			});
 
-			expect(mockApi.db.getHistory).toHaveBeenCalledWith("test", 25, true, 100);
+			expect(mockApi.db.getHistory).toHaveBeenCalledWith({
+				query: "test",
+				limit: 25,
+				favoritesOnly: true,
+				offset: 100,
+			});
+		});
+
+		it("returns error result when API call fails", async () => {
+			const mockApi = getMockElectronAPI();
+			mockApi.db.getHistory.mockRejectedValue(new Error("Query failed"));
+
+			const result = await getHistoryResult();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error.type).toBe("QUERY_FAILED");
+				expect(result.error.message).toBe("Failed to get history");
+			}
+			expect.assertions(3);
 		});
 	});
 
-	describe("deleteHistoryItem", () => {
-		it("calls electronAPI.db.deleteHistoryItem with id", async () => {
+	describe("deleteHistoryItemResult", () => {
+		it("returns ok result when successful", async () => {
 			const mockApi = getMockElectronAPI();
 
-			await deleteHistoryItem(123);
+			const result = await deleteHistoryItemResult(123);
 
+			expect(result.ok).toBe(true);
 			expect(mockApi.db.deleteHistoryItem).toHaveBeenCalledWith(123);
 		});
-	});
 
-	describe("clearAllHistory", () => {
-		it("calls electronAPI.db.clearAllHistory", async () => {
+		it("returns error result when API call fails", async () => {
 			const mockApi = getMockElectronAPI();
+			mockApi.db.deleteHistoryItem.mockRejectedValue(
+				new Error("Delete failed"),
+			);
 
-			await clearAllHistory();
+			const result = await deleteHistoryItemResult(123);
 
-			expect(mockApi.db.clearAllHistory).toHaveBeenCalled();
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error.type).toBe("QUERY_FAILED");
+				expect(result.error.message).toBe("Failed to delete history item");
+			}
+			expect.assertions(3);
 		});
 	});
 
-	describe("toggleFavorite", () => {
-		it("calls electronAPI.db.toggleFavorite with id", async () => {
+	describe("clearAllHistoryResult", () => {
+		it("returns ok result when successful", async () => {
+			const mockApi = getMockElectronAPI();
+
+			const result = await clearAllHistoryResult();
+
+			expect(result.ok).toBe(true);
+			expect(mockApi.db.clearAllHistory).toHaveBeenCalled();
+		});
+
+		it("returns error result when API call fails", async () => {
+			const mockApi = getMockElectronAPI();
+			mockApi.db.clearAllHistory.mockRejectedValue(new Error("Clear failed"));
+
+			const result = await clearAllHistoryResult();
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error.type).toBe("QUERY_FAILED");
+				expect(result.error.message).toBe("Failed to clear all history");
+			}
+			expect.assertions(3);
+		});
+	});
+
+	describe("toggleFavoriteResult", () => {
+		it("returns ok result with true when favoriting", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.toggleFavorite.mockResolvedValue(true);
 
-			const result = await toggleFavorite(123);
+			const result = await toggleFavoriteResult(123);
 
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.value).toBe(true);
+			}
 			expect(mockApi.db.toggleFavorite).toHaveBeenCalledWith(123);
-			expect(result).toBe(true);
+			expect.assertions(3);
 		});
 
-		it("returns false when unfavoriting", async () => {
+		it("returns ok result with false when unfavoriting", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.toggleFavorite.mockResolvedValue(false);
 
-			const result = await toggleFavorite(123);
+			const result = await toggleFavoriteResult(123);
 
-			expect(result).toBe(false);
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.value).toBe(false);
+			}
+			expect.assertions(2);
+		});
+
+		it("returns error result when API call fails", async () => {
+			const mockApi = getMockElectronAPI();
+			mockApi.db.toggleFavorite.mockRejectedValue(new Error("Toggle failed"));
+
+			const result = await toggleFavoriteResult(123);
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error.type).toBe("QUERY_FAILED");
+				expect(result.error.message).toBe("Failed to toggle favorite");
+			}
+			expect.assertions(3);
 		});
 	});
 });

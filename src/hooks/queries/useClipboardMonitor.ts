@@ -1,9 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { CLIPBOARD_POLL_INTERVAL } from "../../lib/constants";
-import { addClip } from "../../lib/db";
+import { addClipResult } from "../../lib/db";
 import { historyKeys } from "../../lib/queryKeys";
-import { waitFor } from "../../utils";
+import { waitForElectronAPIResult } from "../../lib/utils";
+import { detectClipboardChange, normalizeClipboardText } from "./utils";
 
 /**
  * Hook that monitors clipboard changes and adds new content to history
@@ -20,12 +21,19 @@ export function useClipboardMonitor() {
 			try {
 				if (!window.electronAPI) return;
 
-				const text = await window.electronAPI.clipboard.readText();
-				const currentText = text || "";
+				const rawText = await window.electronAPI.clipboard.readText();
+				const currentText = normalizeClipboardText(rawText);
+				const change = detectClipboardChange(
+					currentText,
+					lastClipboardTextRef.current,
+				);
 
-				if (currentText && currentText !== lastClipboardTextRef.current) {
-					lastClipboardTextRef.current = currentText;
-					await addClip(currentText);
+				if (change.some) {
+					lastClipboardTextRef.current = change.value;
+					const result = await addClipResult(change.value);
+					if (!result.ok) {
+						console.error("Failed to add clip:", result.error.message);
+					}
 					// Invalidate history queries to show new item
 					queryClient.invalidateQueries({ queryKey: historyKeys.all });
 				}
@@ -36,12 +44,19 @@ export function useClipboardMonitor() {
 
 		const startPolling = async () => {
 			try {
-				await waitFor(() => window.electronAPI !== undefined);
+				const result = await waitForElectronAPIResult();
+				if (!result.ok) {
+					console.error(
+						"Failed to wait for electron API:",
+						result.error.message,
+					);
+					return;
+				}
 
 				// Initialize with current clipboard content
 				try {
-					const currentText = await window.electronAPI.clipboard.readText();
-					lastClipboardTextRef.current = currentText || "";
+					const rawText = await window.electronAPI.clipboard.readText();
+					lastClipboardTextRef.current = normalizeClipboardText(rawText);
 				} catch (error) {
 					console.error("Error reading initial clipboard:", error);
 				}

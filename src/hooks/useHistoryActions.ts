@@ -1,11 +1,15 @@
 import { useCallback, useState } from "react";
 import type { HistoryItem } from "../lib/db";
-import { retryOperation } from "../lib/utils";
 import {
 	useClearHistoryMutation,
 	useDeleteItemMutation,
 	useToggleFavoriteMutation,
-} from "./queries";
+} from "./mutations";
+import {
+	calculateIndexAfterDelete,
+	formatActionError,
+	writeToClipboardWithRetry,
+} from "./queries/utils";
 
 interface UseHistoryActionsOptions {
 	/** Current filtered history array for index calculations */
@@ -57,8 +61,8 @@ export function useHistoryActions({
 	 * Handles errors consistently across actions
 	 */
 	const handleError = useCallback((err: unknown, defaultMessage: string) => {
-		const message = err instanceof Error ? err.message : String(err);
-		setError(`${defaultMessage}: ${message}`);
+		const message = formatActionError(defaultMessage, err);
+		setError(message);
 		console.error(defaultMessage, err);
 	}, []);
 
@@ -67,19 +71,15 @@ export function useHistoryActions({
 	 */
 	const handleItemClick = useCallback(
 		async (item: HistoryItem) => {
-			if (!window.electronAPI) return;
+			setError(null);
 
-			try {
-				setError(null);
-				await retryOperation({
-					operation: async () => {
-						await window.electronAPI.clipboard.writeText(item.content);
-					},
-				});
+			const result = await writeToClipboardWithRetry(item.content);
+
+			if (result.ok) {
 				await onHideWindow();
 				setSelectedIndex(0);
-			} catch (err) {
-				handleError(err, "Failed to copy to clipboard");
+			} else {
+				handleError(result.error, "Failed to copy to clipboard");
 			}
 		},
 		[handleError, onHideWindow, setSelectedIndex],
@@ -110,9 +110,13 @@ export function useHistoryActions({
 			try {
 				setError(null);
 				await deleteItemMutation.mutateAsync(itemId);
-				// Adjust selected index if deleted item was at the end
-				if (selectedIndex >= filteredHistory.length - 1) {
-					setSelectedIndex(Math.max(0, filteredHistory.length - 2));
+				// Adjust selected index if necessary using pure function
+				const newIndex = calculateIndexAfterDelete(
+					selectedIndex,
+					filteredHistory.length,
+				);
+				if (newIndex !== selectedIndex) {
+					setSelectedIndex(newIndex);
 				}
 			} catch (err) {
 				handleError(err, "Failed to delete item");

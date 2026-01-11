@@ -60,12 +60,138 @@
 - Use higher-order functions (`map`, `filter`, `reduce`) over loops
 - Prefer function composition over inheritance
 - Keep functions small and focused on a single transformation
++- **Prefer recursion for naturally recursive problems** (tree traversal, backtracking), but use loops for simple iteration to avoid stack overflow risks
 
-### FP Utilities (see [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md))
-- Use `Result<T, E>` for operations that can fail instead of try/catch
-- Use `Option<T>` for values that may or may not exist instead of null checks
-- Use `pipe` / `pipeAsync` for composing data transformations
-- Extract pure transformation functions from hooks and handlers
+### FP Utilities (`src/lib/fp.ts`)
+
+The codebase includes custom FP utilities for explicit error handling and function composition.
+
+#### Result Type - Explicit Error Handling
+
+Use `Result<T, E>` for operations that can fail instead of try/catch:
+
+```typescript
+import { type Result, ok, err, tryCatchAsync } from "../lib/fp";
+import { type DbError, queryFailed } from "../lib/errors";
+
+// Return Result instead of throwing
+async function getUser(id: number): Promise<Result<User, DbError>> {
+  return tryCatchAsync(
+    () => db.query("SELECT * FROM users WHERE id = ?", [id]),
+    (error) => queryFailed("Failed to get user", error)
+  );
+}
+
+// Handle Result explicitly
+const result = await getUser(1);
+if (result.ok) {
+  console.log(result.value.name);
+} else {
+  console.error(result.error.message);
+}
+```
+
+#### Option Type - Nullable Value Handling
+
+Use `Option<T>` for values that may or may not exist:
+
+```typescript
+import { type Option, some, none, fromNullable, matchOption } from "../lib/fp";
+
+// Detect clipboard change - returns Option
+const detectClipboardChange = (
+  current: string,
+  previous: string
+): Option<string> =>
+  current && current !== previous ? some(current) : none;
+
+// Handle Option explicitly
+const change = detectClipboardChange(newText, lastText);
+if (change.some) {
+  await saveToHistory(change.value);
+}
+```
+
+#### Function Composition with `pipe`
+
+Use `pipe` for composing data transformations:
+
+```typescript
+import { pipe } from "../lib/fp";
+
+// Transform data through a pipeline
+const result = pipe(
+  rawInput,
+  (s) => s.trim(),
+  (s) => s.toLowerCase(),
+  (s) => s.replace(/\s+/g, "-")
+);
+```
+
+#### Domain-Specific Errors (`src/lib/errors.ts`)
+
+Define typed errors for better error handling:
+
+```typescript
+import { type DbError, dbNotReady, queryFailed } from "../lib/errors";
+
+// Create specific error types
+const error: DbError = queryFailed("User not found", originalError);
+
+// Type-safe error handling
+if (error.type === "QUERY_FAILED") {
+  logError(error.cause);
+}
+```
+
+#### Extracting Pure Functions
+
+Extract pure transformation functions from hooks for better testability:
+
+```typescript
+// ❌ Inline logic in hook
+queryClient.setQueriesData(
+  { queryKey: historyKeys.all },
+  (old) => ({
+    ...old,
+    pages: old.pages.map((page) => ({
+      ...page,
+      items: page.items.filter((item) => item.id !== itemId),
+    })),
+  })
+);
+
+// ✅ Extract as pure function
+export const removeItemFromPages =
+  (itemId: number) =>
+  (data: InfiniteHistoryData): InfiniteHistoryData => ({
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      items: page.items.filter((item) => item.id !== itemId),
+    })),
+  });
+
+// Use in hook
+queryClient.setQueriesData(
+  { queryKey: historyKeys.all },
+  applyTransform(removeItemFromPages(itemId))
+);
+```
+
+#### When to Use FP Patterns
+
+| Pattern        | Use When                                |
+| -------------- | --------------------------------------- |
+| `Result<T, E>` | Operation can fail (DB, API, file I/O)  |
+| `Option<T>`    | Value may or may not exist              |
+| `pipe`         | Chaining 3+ transformations             |
+| Pure functions | Logic can be tested in isolation        |
+| Recursion      | Iterative operations with backoff/retry |
+
+#### Backward Compatibility
+
+Legacy functions (`retryOperation`, `waitFor`) are kept with `@deprecated` tags. New code should use the Result-returning versions (`retryWithBackoff`, `waitForCondition`).
 
 ## 10. Best Practices
 - Refrain from using React's useEffect as much as possible
