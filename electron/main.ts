@@ -5,6 +5,7 @@ import {
 	app,
 	BrowserWindow,
 	clipboard,
+	dialog,
 	globalShortcut,
 	ipcMain,
 	Menu,
@@ -421,38 +422,44 @@ const registerIpcHandlers = (): void => {
 };
 
 // Application ready
-app.whenReady().then(() => {
-	// Initialize database with error handling
-	const dbPath = path.join(app.getPath("userData"), "clipboard.db");
+app.whenReady().then(async () => {
 	try {
+		// Initialize database
+		const dbPath = path.join(app.getPath("userData"), "clipboard.db");
 		dbModule.init(dbPath);
-	} catch (error) {
-		console.error("Failed to initialize database:", error);
-		app.quit();
-		return;
-	}
 
-	windowModule.create();
-	trayModule.create();
-	registerIpcHandlers();
+		// Create window and tray
+		windowModule.create();
+		trayModule.create();
 
-	// Register global shortcut Cmd+Shift+V (or Ctrl+Shift+V on Windows/Linux)
-	const shortcut = "CommandOrControl+Shift+V";
-	const registered = globalShortcut.register(shortcut, () =>
-		windowModule.toggle(),
-	);
-	if (!registered) {
-		console.error(
-			`Global shortcut registration failed for "${shortcut}". ` +
-				"The shortcut may already be in use by another application.",
+		// Register IPC handlers
+		registerIpcHandlers();
+
+		// Register global shortcut Cmd+Shift+V (or Ctrl+Shift+V on Windows/Linux)
+		const shortcut = "CommandOrControl+Shift+V";
+		const registered = globalShortcut.register(shortcut, () =>
+			windowModule.toggle(),
 		);
-	}
-
-	app.on("activate", () => {
-		if (BrowserWindow.getAllWindows().length === 0) {
-			windowModule.create();
+		if (!registered) {
+			console.error(
+				`Global shortcut registration failed for "${shortcut}". ` +
+					"The shortcut may already be in use by another application.",
+			);
 		}
-	});
+
+		app.on("activate", () => {
+			if (BrowserWindow.getAllWindows().length === 0) {
+				windowModule.create();
+			}
+		});
+	} catch (error) {
+		console.error("Failed to initialize application:", error);
+		dialog.showErrorBox(
+			"Initialization Error",
+			`The application failed to start properly.\n\n${error instanceof Error ? error.message : String(error)}\n\nThe application will now quit.`,
+		);
+		app.quit();
+	}
 });
 
 app.on("window-all-closed", () => {
