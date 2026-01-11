@@ -84,7 +84,8 @@ export async function toggleFavoriteResult(
 }
 
 /**
- * Add a clipboard entry if it's different from the most recent entry.
+ * Add a clipboard entry to the database.
+ * Deduplication is performed in the database layer (electron/main.ts).
  * Returns a Result for explicit error handling.
  */
 export async function addClipResult(
