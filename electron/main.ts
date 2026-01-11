@@ -150,6 +150,7 @@ const createDbModule = () => {
 	let db: Database.Database | null = null;
 
 	const init = (dbPath: string): void => {
+		if (db) throw new Error("Database already initialized");
 		try {
 			db = new Database(dbPath);
 			runMigrations(db);
