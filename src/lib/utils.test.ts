@@ -60,6 +60,15 @@ describe("formatDate", () => {
 		expect(formatDate("invalid-date")).toBe("invalid-date");
 		expect(formatDate("not a date")).toBe("not a date");
 	});
+
+	it("handles SQLite datetime format without timezone indicator", () => {
+		// SQLite datetime('now') returns UTC time without timezone indicator
+		// e.g., "2026-01-08 12:00:00" which should be interpreted as UTC
+		expect(formatDate("2026-01-08 12:00:00")).toBe("Just now");
+		expect(formatDate("2026-01-08 11:55:00")).toBe("5m ago");
+		expect(formatDate("2026-01-08 10:00:00")).toBe("2h ago");
+		expect(formatDate("2026-01-07 12:00:00")).toBe("Jan 7, 2026");
+	});
 });
 
 describe("truncateText", () => {

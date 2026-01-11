@@ -11,12 +11,22 @@ import { err, ok, type Result } from "./fp";
 
 /**
  * Formats a date string for display with relative time for recent dates
- * @param dateString - ISO date string
+ * @param dateString - Date string from SQLite (UTC without timezone indicator)
  * @returns Formatted date string (e.g., "Just now", "5m ago", "2h ago", "Jan 3, 2024")
  */
 export function formatDate(dateString: string): string {
 	try {
-		const date = new Date(dateString);
+		// SQLite datetime('now') returns UTC without timezone indicator (e.g., "2026-01-11 15:42:10")
+		// Append 'Z' to parse as UTC if no timezone info present
+		const hasTimezone =
+			dateString.includes("Z") ||
+			dateString.includes("+") ||
+			dateString.includes("-T");
+		const normalizedDateString = hasTimezone
+			? dateString
+			: `${dateString.replace(" ", "T")}Z`;
+
+		const date = new Date(normalizedDateString);
 		const now = new Date();
 		const diffMs = now.getTime() - date.getTime();
 		const diffMins = Math.floor(diffMs / 60000);
