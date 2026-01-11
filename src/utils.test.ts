@@ -135,4 +135,62 @@ describe("waitForCondition", () => {
 		expect(condition).toHaveBeenCalledTimes(2);
 		expect.assertions(5);
 	});
+
+	it("clamps delay to maxDelay", async () => {
+		let callCount = 0;
+		const condition = vi.fn(() => {
+			callCount++;
+			return callCount >= 4;
+		});
+
+		const promise = waitForCondition({
+			condition,
+			maxAttempts: 10,
+			baseDelay: 100,
+			maxDelay: 150, // Cap delay so 100*2^1=200 gets clamped to 150
+		});
+
+		// First check - immediate
+		await vi.advanceTimersByTimeAsync(0);
+		expect(condition).toHaveBeenCalledTimes(1);
+
+		// First retry: min(100 * 2^0, 150) = 100ms
+		await vi.advanceTimersByTimeAsync(100);
+		expect(condition).toHaveBeenCalledTimes(2);
+
+		// Second retry: min(100 * 2^1, 150) = min(200, 150) = 150ms (clamped)
+		await vi.advanceTimersByTimeAsync(150);
+		expect(condition).toHaveBeenCalledTimes(3);
+
+		// Third retry: min(100 * 2^2, 150) = min(400, 150) = 150ms (clamped)
+		await vi.advanceTimersByTimeAsync(150);
+		expect(condition).toHaveBeenCalledTimes(4);
+
+		const result = await promise;
+		expect(result.ok).toBe(true);
+	});
+
+	it("returns error result when condition throws", async () => {
+		const testError = new Error("Condition failed");
+		const condition = vi.fn().mockImplementation(() => {
+			throw testError;
+		});
+
+		const result = await waitForCondition({
+			condition,
+			maxAttempts: 5,
+			baseDelay: 10,
+		});
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error.type).toBe("MAX_RETRIES_EXCEEDED");
+			expect(result.error.attempts).toBe(1);
+			if (result.error.type === "MAX_RETRIES_EXCEEDED") {
+				expect(result.error.lastError).toBe(testError);
+			}
+		}
+		expect(condition).toHaveBeenCalledTimes(1);
+		expect.assertions(5);
+	});
 });
