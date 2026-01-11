@@ -176,6 +176,8 @@ export const isDbError = (error: unknown): error is DbError =>
 	typeof error === "object" &&
 	error !== null &&
 	"type" in error &&
+	"message" in error &&
+	typeof error.message === "string" &&
 	["DB_NOT_READY", "QUERY_FAILED", "TIMEOUT"].includes(
 		(error as { type: string }).type,
 	);
@@ -187,6 +189,8 @@ export const isClipboardError = (error: unknown): error is ClipboardError =>
 	typeof error === "object" &&
 	error !== null &&
 	"type" in error &&
+	"message" in error &&
+	typeof error.message === "string" &&
 	["READ_FAILED", "WRITE_FAILED", "API_NOT_AVAILABLE"].includes(
 		(error as { type: string }).type,
 	);
@@ -198,6 +202,8 @@ export const isWaitError = (error: unknown): error is WaitError =>
 	typeof error === "object" &&
 	error !== null &&
 	"type" in error &&
+	"message" in error &&
+	typeof error.message === "string" &&
 	["CONDITION_TIMEOUT", "MAX_RETRIES_EXCEEDED"].includes(
 		(error as { type: string }).type,
 	);

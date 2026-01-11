@@ -418,8 +418,16 @@ const registerIpcHandlers = (): void => {
 
 // Application ready
 app.whenReady().then(() => {
+	// Initialize database with error handling
 	const dbPath = path.join(app.getPath("userData"), "clipboard.db");
-	dbModule.init(dbPath);
+	try {
+		dbModule.init(dbPath);
+	} catch (error) {
+		console.error("Failed to initialize database:", error);
+		app.quit();
+		return;
+	}
+
 	windowModule.create();
 	trayModule.create();
 	registerIpcHandlers();

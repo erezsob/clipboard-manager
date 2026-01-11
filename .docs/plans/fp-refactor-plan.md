@@ -35,16 +35,16 @@ todos:
     content: Expand FP guidelines in .docs/CODE_STANDARDS.md
     status: completed
 
-  # Phase 2 (Migration) - PENDING
+  # Phase 2 (Migration) - IN PROGRESS
   - id: migrate-history-query
     content: Update useHistoryQuery.ts to use getHistoryResult and handle Result types
-    status: pending
+    status: completed
   - id: migrate-clipboard-monitor
     content: Update useClipboardMonitor.ts to use addClipResult and waitForCondition
-    status: pending
+    status: completed
   - id: migrate-mutations
     content: Update useHistoryMutations.ts to use Result-returning db functions
-    status: pending
+    status: completed
   - id: remove-deprecated-db
     content: Remove deprecated functions from src/lib/db.ts
     status: pending

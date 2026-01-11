@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { CLIPBOARD_POLL_INTERVAL } from "../../lib/constants";
+import { addClipResult } from "../../lib/db";
 import { historyKeys } from "../../lib/queryKeys";
-import { addClipResult, waitForElectronAPIResult } from "../../lib/utils";
+import { waitForElectronAPIResult } from "../../lib/utils";
 import { detectClipboardChange, normalizeClipboardText } from "./utils";
 
 /**

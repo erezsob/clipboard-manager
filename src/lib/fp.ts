@@ -74,10 +74,17 @@ export const matchResult = <T, E, U>(
 ): U => (result.ok ? handlers.ok(result.value) : handlers.err(result.error));
 
 /**
- * Extracts the value from a Result, throwing if it's an error
- * Use sparingly - prefer matchResult for explicit handling
+ * Extracts the value from a Result, throwing if it's an error.
+ * Use sparingly - prefer matchResult for explicit handling.
  *
- * @throws The error if result is not ok
+ * WARNING: Since E can be any type, this may throw non-Error values
+ * (strings, objects, etc.). If you need Error instances for stack traces
+ * or logging, either:
+ * 1. Constrain E to extend Error in your Result types
+ * 2. Use matchResult to handle errors explicitly
+ * 3. Wrap the thrown value in an Error at the call site
+ *
+ * @throws The error value (E) if result is not ok - may not be an Error instance
  */
 export const unwrapResult = <T, E>(result: Result<T, E>): T => {
 	if (result.ok) return result.value;

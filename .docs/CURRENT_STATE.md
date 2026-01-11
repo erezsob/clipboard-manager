@@ -211,9 +211,9 @@
 8. ✅ Expand FP guidelines in `.docs/CODE_STANDARDS.md`
 
 **Phase 2: Migration** 🔨
-1. 🔨 Update `useHistoryQuery.ts` to use `getHistoryResult`
-2. 🔨 Update `useClipboardMonitor.ts` to use `addClipResult` and `waitForCondition`
-3. 🔨 Update `useHistoryMutations.ts` to use Result-returning db functions
+1. ✅ Update `useHistoryQuery.ts` to use `getHistoryResult`
+2. ✅ Update `useClipboardMonitor.ts` to use `addClipResult` and `waitForCondition`
+3. ✅ Update `useHistoryMutations.ts` to use Result-returning db functions
 4. 🔨 Remove deprecated functions from `db.ts`, `utils.ts`
 5. 🔨 Update tests for new function signatures
 

@@ -83,6 +83,24 @@ export async function toggleFavoriteResult(
 	);
 }
 
+/**
+ * Add a clipboard entry if it's different from the most recent entry.
+ * Returns a Result for explicit error handling.
+ */
+export async function addClipResult(
+	text: string,
+): Promise<Result<void, DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(
+		async () => {
+			await window.electronAPI.db.addClip(text);
+		},
+		(error) => queryFailed("Failed to add clip", error),
+	);
+}
+
 // ============================================================================
 // Legacy API (deprecated, kept for backward compatibility)
 // ============================================================================

@@ -5,10 +5,9 @@ import {
 	type DbError,
 	dbNotReady,
 	maxRetriesExceeded,
-	queryFailed,
 	type WaitError,
 } from "./errors";
-import { err, ok, type Result, tryCatchAsync } from "./fp";
+import { err, ok, type Result } from "./fp";
 
 /**
  * Formats a date string for display with relative time for recent dates
@@ -159,26 +158,4 @@ export async function waitForElectronAPIResult(): Promise<
  */
 export async function waitForElectronAPI(): Promise<void> {
 	await waitFor(() => window.electronAPI !== undefined);
-}
-
-// ============================================================================
-// Result-returning API (new FP-style functions)
-// ============================================================================
-
-/**
- * Add a clipboard entry if it's different from the most recent entry.
- * Returns a Result for explicit error handling.
- */
-export async function addClipResult(
-	text: string,
-): Promise<Result<void, DbError>> {
-	const apiResult = await waitForElectronAPIResult();
-	if (!apiResult.ok) return apiResult;
-
-	return tryCatchAsync(
-		async () => {
-			await window.electronAPI.db.addClip(text);
-		},
-		(error) => queryFailed("Failed to add clip", error),
-	);
 }
