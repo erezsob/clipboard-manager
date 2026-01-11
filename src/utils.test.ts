@@ -26,7 +26,11 @@ describe("waitForCondition", () => {
 			return callCount >= 3;
 		});
 
-		const promise = waitForCondition({ condition, maxAttempts: 10, baseDelay: 10 });
+		const promise = waitForCondition({
+			condition,
+			maxAttempts: 10,
+			baseDelay: 10,
+		});
 
 		// First check - false
 		await vi.advanceTimersByTimeAsync(0);
@@ -48,7 +52,11 @@ describe("waitForCondition", () => {
 	it("returns error result after max attempts exceeded", async () => {
 		const condition = vi.fn().mockReturnValue(false);
 
-		const promise = waitForCondition({ condition, maxAttempts: 3, baseDelay: 10 });
+		const promise = waitForCondition({
+			condition,
+			maxAttempts: 3,
+			baseDelay: 10,
+		});
 
 		// Run all timers to completion
 		await vi.runAllTimersAsync();
@@ -71,7 +79,11 @@ describe("waitForCondition", () => {
 			return callCount >= 4;
 		});
 
-		const promise = waitForCondition({ condition, maxAttempts: 10, baseDelay: 10 });
+		const promise = waitForCondition({
+			condition,
+			maxAttempts: 10,
+			baseDelay: 10,
+		});
 
 		// First check - immediate
 		await vi.advanceTimersByTimeAsync(0);
@@ -104,7 +116,11 @@ describe("waitForCondition", () => {
 	it("respects custom maxAttempts", async () => {
 		const condition = vi.fn().mockReturnValue(false);
 
-		const promise = waitForCondition({ condition, maxAttempts: 2, baseDelay: 10 });
+		const promise = waitForCondition({
+			condition,
+			maxAttempts: 2,
+			baseDelay: 10,
+		});
 
 		// Run all timers to completion
 		await vi.runAllTimersAsync();

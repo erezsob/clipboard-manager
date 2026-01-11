@@ -18,6 +18,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Represents a row from the history table.
+ * Used for explicit typing of database query results.
+ */
+type HistoryRow = {
+	id: number;
+	content: string;
+	type: string;
+	created_at: string;
+	is_favorite: number;
+};
+
+// ============================================================================
 // Pure Functions
 // ============================================================================
 
@@ -155,8 +171,10 @@ const createDbModule = () => {
 			db = new Database(dbPath);
 			runMigrations(db);
 		} catch (error) {
-			console.error('Failed to initialize database:', error);
-			throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+			console.error("Failed to initialize database:", error);
+			throw new Error(
+				`Database initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 	};
 
@@ -397,7 +415,7 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 
 		const db = dbModule.getDb();
 		const { sql, params } = buildHistoryQuery(options);
-		return db.prepare(sql).all(...params);
+		return db.prepare(sql).all(...params) as HistoryRow[];
 	},
 
 	addClip: (_event: Electron.IpcMainInvokeEvent, text: string) => {
@@ -457,8 +475,10 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 			throw new Error(`History item not found: ${id}`);
 		}
 
+		// Toggle favorite, treating NULL as 0 (not favorite)
+		// NULL -> 1, 0 -> 1, 1 -> 0
 		db.prepare(
-			"UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?",
+			"UPDATE history SET is_favorite = CASE WHEN COALESCE(is_favorite, 0) = 1 THEN 0 ELSE 1 END WHERE id = ?",
 		).run(id);
 
 		// Return the new favorite state
