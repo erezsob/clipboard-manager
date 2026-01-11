@@ -77,8 +77,31 @@ export const isValidPaginationParams = (
 		(typeof offset === "number" && Number.isInteger(offset) && offset >= 0));
 
 /**
+ * Pagination limits for history queries.
+ */
+const DEFAULT_LIMIT = 50;
+const MIN_LIMIT = 1;
+const MAX_LIMIT = 200;
+
+/**
+ * Safely coerces a value to a non-negative integer.
+ * Returns the default if the value is not a valid number.
+ * Pure function.
+ */
+const toSafeInt = (value: unknown, defaultValue: number): number => {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		return defaultValue;
+	}
+	return Math.floor(value);
+};
+
+/**
  * Builds a SQL query for history with optional filters.
  * Pure function - returns query string and params.
+ *
+ * Sanitizes pagination parameters:
+ * - limit: coerced to integer, clamped to [1, 200], defaults to 50
+ * - offset: coerced to integer, clamped to >= 0, defaults to 0
  */
 export const buildHistoryQuery = (options: {
 	query?: string;
@@ -86,7 +109,14 @@ export const buildHistoryQuery = (options: {
 	favoritesOnly?: boolean;
 	offset?: number;
 }): { sql: string; params: (string | number)[] } => {
-	const { query = "", limit = 50, favoritesOnly = false, offset = 0 } = options;
+	const { query = "", favoritesOnly = false } = options;
+
+	// Coerce and clamp pagination parameters to safe values
+	const rawLimit = toSafeInt(options.limit, DEFAULT_LIMIT);
+	const rawOffset = toSafeInt(options.offset, 0);
+	const limit = Math.min(Math.max(rawLimit, MIN_LIMIT), MAX_LIMIT);
+	const offset = Math.max(rawOffset, 0);
+
 	const conditions: string[] = [];
 	const params: (string | number)[] = [];
 
