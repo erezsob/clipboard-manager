@@ -1,7 +1,7 @@
 ---
 name: Functional Programming Refactor
 overview: Introduce custom FP utilities (pipe, Result, Option) and refactor existing code to follow functional programming principles with immutability, pure functions, and declarative patterns.
-status: in_progress
+status: completed
 todos:
   # Phase 1 (Foundation) - COMPLETED
   - id: create-fp-utils
@@ -35,7 +35,7 @@ todos:
     content: Expand FP guidelines in .docs/CODE_STANDARDS.md
     status: completed
 
-  # Phase 2 (Migration) - IN PROGRESS
+  # Phase 2 (Migration) - COMPLETED
   - id: migrate-history-query
     content: Update useHistoryQuery.ts to use getHistoryResult and handle Result types
     status: completed
@@ -47,13 +47,13 @@ todos:
     status: completed
   - id: remove-deprecated-db
     content: Remove deprecated functions from src/lib/db.ts
-    status: pending
+    status: completed
   - id: remove-deprecated-utils
     content: Remove deprecated waitFor from src/utils.ts and retryOperation from src/lib/utils.ts
-    status: pending
+    status: completed
   - id: update-tests
     content: Update tests to use new Result-returning functions
-    status: pending
+    status: completed
 ---
 
 # Functional Programming Refactor

@@ -3,7 +3,7 @@ import { MAX_TEXT_DISPLAY_LENGTH } from "./constants";
 import {
 	formatDate,
 	hasMoreItems,
-	retryOperation,
+	retryWithBackoff,
 	truncateText,
 } from "./utils";
 
@@ -93,7 +93,7 @@ describe("truncateText", () => {
 	});
 });
 
-describe("retryOperation", () => {
+describe("retryWithBackoff", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
@@ -102,23 +102,27 @@ describe("retryOperation", () => {
 		vi.useRealTimers();
 	});
 
-	it("returns result on first successful attempt", async () => {
+	it("returns ok result on first successful attempt", async () => {
 		const operation = vi.fn().mockResolvedValue("success");
 
-		const result = await retryOperation({ operation });
+		const result = await retryWithBackoff({ operation });
 
-		expect(result).toBe("success");
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value).toBe("success");
+		}
 		expect(operation).toHaveBeenCalledTimes(1);
+		expect.assertions(3);
 	});
 
-	it("retries on failure and returns result on subsequent success", async () => {
+	it("retries on failure and returns ok result on subsequent success", async () => {
 		const operation = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("First failure"))
 			.mockRejectedValueOnce(new Error("Second failure"))
 			.mockResolvedValue("success");
 
-		const promise = retryOperation({ operation, baseDelay: 100 });
+		const promise = retryWithBackoff({ operation, baseDelay: 100 });
 
 		// First attempt fails immediately
 		await vi.advanceTimersByTimeAsync(0);
@@ -128,32 +132,37 @@ describe("retryOperation", () => {
 		await vi.advanceTimersByTimeAsync(200);
 
 		const result = await promise;
-		expect(result).toBe("success");
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value).toBe("success");
+		}
 		expect(operation).toHaveBeenCalledTimes(3);
+		expect.assertions(3);
 	});
 
-	it("throws error after max retries exceeded", async () => {
+	it("returns error result after max retries exceeded", async () => {
 		const operation = vi.fn().mockRejectedValue(new Error("Always fails"));
 
-		// Catch the rejection to prevent unhandled promise rejection
-		let rejectionError: Error | undefined;
-		const promise = retryOperation({
+		const promise = retryWithBackoff({
 			operation,
 			maxRetries: 3,
 			baseDelay: 100,
-		}).catch((e) => {
-			rejectionError = e;
 		});
 
 		// Run all timers to completion
 		await vi.runAllTimersAsync();
-		await promise;
+		const result = await promise;
 
-		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe(
-			"Operation failed after 3 retry attempts",
-		);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error.type).toBe("MAX_RETRIES_EXCEEDED");
+			expect(result.error.message).toBe(
+				"Operation failed after 3 retry attempts",
+			);
+			expect(result.error.attempts).toBe(3);
+		}
 		expect(operation).toHaveBeenCalledTimes(3);
+		expect.assertions(5);
 	});
 
 	it("uses exponential backoff for delays", async () => {
@@ -163,7 +172,7 @@ describe("retryOperation", () => {
 			.mockRejectedValueOnce(new Error("Fail 2"))
 			.mockResolvedValue("success");
 
-		const promise = retryOperation({ operation, baseDelay: 100 });
+		const promise = retryWithBackoff({ operation, baseDelay: 100 });
 		const delays: number[] = [];
 		let lastTime = Date.now();
 
@@ -188,42 +197,41 @@ describe("retryOperation", () => {
 	it("respects custom maxRetries option", async () => {
 		const operation = vi.fn().mockRejectedValue(new Error("Fails"));
 
-		// Catch the rejection to prevent unhandled promise rejection
-		let rejectionError: Error | undefined;
-		const promise = retryOperation({
+		const promise = retryWithBackoff({
 			operation,
 			maxRetries: 1,
 			baseDelay: 10,
-		}).catch((e) => {
-			rejectionError = e;
 		});
 
 		await vi.runAllTimersAsync();
-		await promise;
+		const result = await promise;
 
-		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe(
-			"Operation failed after 1 retry attempt",
-		);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error.type).toBe("MAX_RETRIES_EXCEEDED");
+			expect(result.error.message).toBe(
+				"Operation failed after 1 retry attempt",
+			);
+			expect(result.error.attempts).toBe(1);
+		}
 		expect(operation).toHaveBeenCalledTimes(1);
+		expect.assertions(5);
 	});
 
-	it("handles non-Error exceptions", async () => {
-		const operation = vi.fn().mockRejectedValue("string error");
+	it("preserves last error in result", async () => {
+		const lastError = new Error("Final failure");
+		const operation = vi.fn().mockRejectedValue(lastError);
 
-		// Catch the rejection to prevent unhandled promise rejection
-		let rejectionError: Error | undefined;
-		const promise = retryOperation({ operation, maxRetries: 1 }).catch((e) => {
-			rejectionError = e;
-		});
+		const promise = retryWithBackoff({ operation, maxRetries: 1 });
 
 		await vi.runAllTimersAsync();
-		await promise;
+		const result = await promise;
 
-		expect(rejectionError).toBeDefined();
-		expect(rejectionError?.message).toBe(
-			"Operation failed after 1 retry attempt",
-		);
+		expect(result.ok).toBe(false);
+		if (!result.ok && result.error.type === "MAX_RETRIES_EXCEEDED") {
+			expect(result.error.lastError).toBe(lastError);
+		}
+		expect.assertions(2);
 	});
 });
 

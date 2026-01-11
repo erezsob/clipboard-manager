@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { waitFor, waitForCondition } from "../utils";
+import { waitForCondition } from "../utils";
 import { MAX_TEXT_DISPLAY_LENGTH } from "./constants";
 import {
 	type DbError,
@@ -105,28 +105,6 @@ export async function retryWithBackoff<T>(
 }
 
 /**
- * @deprecated Use retryWithBackoff which returns Result<T, WaitError> for explicit error handling.
- * This function is kept for backward compatibility during migration.
- *
- * Retries an async operation with exponential backoff
- * @param options - Retry configuration options
- * @param options.operation - Async function to retry
- * @param options.maxRetries - Maximum number of retry attempts (default: 3)
- * @param options.baseDelay - Base delay in milliseconds (default: 1000)
- * @returns Promise that resolves with the operation result
- * @throws Error if all retries fail
- */
-export async function retryOperation<T>(
-	options: RetryOperationOptions<T>,
-): Promise<T> {
-	const result = await retryWithBackoff(options);
-	if (result.ok) {
-		return result.value;
-	}
-	throw new Error(result.error.message);
-}
-
-/**
  * Determines if there are more items to load based on the number of results
  * @param resultsCount - Number of items returned in the current batch
  * @param batchSize - Expected batch size
@@ -151,11 +129,4 @@ export async function waitForElectronAPIResult(): Promise<
 		return ok(undefined);
 	}
 	return err(dbNotReady(`Electron API timeout: ${result.error.message}`));
-}
-
-/**
- * @deprecated Use waitForElectronAPIResult for explicit error handling
- */
-export async function waitForElectronAPI(): Promise<void> {
-	await waitFor(() => window.electronAPI !== undefined);
 }

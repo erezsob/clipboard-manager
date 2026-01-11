@@ -56,24 +56,3 @@ export async function waitForCondition(
 
 	return attempt(0);
 }
-
-/**
- * @deprecated Use waitForCondition which returns Result<void, WaitError> for explicit error handling.
- * This function is kept for backward compatibility during migration.
- *
- * Waits for a condition to be true with exponential backoff
- * @param condition - Function that returns true when condition is met
- * @param maxAttempts - Maximum number of attempts (default: 50)
- * @param baseDelay - Base delay in milliseconds (default: 1)
- * @throws Error if condition not met after max attempts
- */
-export async function waitFor(
-	condition: () => boolean,
-	maxAttempts = 50,
-	baseDelay = 1,
-): Promise<void> {
-	const result = await waitForCondition({ condition, maxAttempts, baseDelay });
-	if (!result.ok) {
-		throw new Error(result.error.message);
-	}
-}
