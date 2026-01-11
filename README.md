@@ -8,6 +8,7 @@ A personal-use macOS clipboard manager with background monitoring, local SQLite 
 
 - **Clipboard History Tracking**: Automatically monitors and stores clipboard text in a local SQLite database
 - **Search Functionality**: Real-time search through clipboard history with case-insensitive matching
+- **Favorites System**: Star/unstar items with a dedicated filter toggle to view only favorites
 - **Keyboard Navigation**: 
   - `Cmd+Shift+V` - Toggle window visibility
   - `↑/↓` - Navigate through history items
@@ -15,31 +16,47 @@ A personal-use macOS clipboard manager with background monitoring, local SQLite 
   - `Esc` - Hide window
 - **Item Management**: 
   - Click any item to copy it to clipboard
+  - Star/unstar items as favorites
   - Delete individual items with trash icon (appears on hover)
-  - Clear all history with confirmation dialog
+  - Clear all history with confirmation dialog (via Settings menu)
+- **System Tray**: Menu bar icon with quick access to show window or quit
+- **Settings Menu**: Cog icon in footer with Quit and Clear All options
+- **Pagination**: Load more functionality with 100-item batches
+- **Near-Duplicate Detection**: Whitespace normalization prevents duplicate entries
 - **Dark Mode UI**: Modern, clean dark theme interface
 - **Error Handling**: Retry logic with exponential backoff for clipboard operations
 - **Window Management**: Starts hidden, toggles via keyboard shortcut
+- **TanStack Query Integration**: 
+  - Data fetching and caching with `@tanstack/react-query`
+  - Optimistic updates for delete and favorite operations
+  - Automatic refetching on window focus
+  - Query key factory for consistent cache management
+- **Modular Architecture**: 
+  - Custom hooks for separation of concerns (`src/hooks/`)
+  - Reusable UI components (`src/components/`)
+- **Functional Programming Patterns**:
+  - Result and Option types for explicit error handling (`src/lib/fp.ts`)
+  - Domain-specific error types (`src/lib/errors.ts`)
+  - Pure transformation functions and function composition
+- **Automated Testing**: Comprehensive test suite with Vitest (115+ tests)
 
 ### 🔨 Planned Features
 
 See [.docs/FEATURES.md](.docs/FEATURES.md) for detailed roadmap including:
-- Settings menu with Quit option
-- System tray integration
-- Favorites/star system
-- Pagination (Load More)
-- Near-duplicate detection
+- Settings/preferences window
 - Persisted snippets management
-- TanStack Query integration
-- Comprehensive test suite
+- E2E testing with Playwright
+- Release workflow (GitHub Actions)
 
 ## Tech Stack
 
 - **Frontend**: React 19 + TypeScript + Tailwind CSS v4
 - **Backend**: Electron
 - **Database**: SQLite (via `better-sqlite3`)
+- **Data Management**: TanStack Query
 - **Icons**: Lucide React
 - **Build Tool**: Vite
+- **Testing**: Vitest + React Testing Library
 - **Code Quality**: Biome (linting & formatting)
 
 ## Prerequisites
@@ -97,6 +114,15 @@ pnpm build
 # Preview production build
 pnpm preview
 
+# Run tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage
+pnpm test:coverage
+
 # Lint code
 pnpm lint
 
@@ -110,7 +136,7 @@ pnpm format
 pnpm knip
 
 # Check TypeScript types
-pnpm type-check
+pnpm types:check
 ```
 
 ### Git Hooks
@@ -134,13 +160,13 @@ git push --no-verify
 
 GitHub Actions runs automated checks on every push to `main` and on pull requests. The CI pipeline includes 5 parallel jobs:
 
-| Job | Description |
-|-----|-------------|
-| **Lint** | Biome linting (`pnpm biome check`) |
-| **Format** | Code formatting check (`pnpm biome format --check`) |
-| **Type Check** | TypeScript validation (`pnpm types:check`) |
-| **Unused Code** | Knip detection (`pnpm knip`) |
-| **Test** | Vitest test suite (`pnpm test`) |
+| Job             | Description                                         |
+| --------------- | --------------------------------------------------- |
+| **Lint**        | Biome linting (`pnpm biome check`)                  |
+| **Format**      | Code formatting check (`pnpm biome format --check`) |
+| **Type Check**  | TypeScript validation (`pnpm types:check`)          |
+| **Unused Code** | Knip detection (`pnpm knip`)                        |
+| **Test**        | Vitest test suite (`pnpm test`)                     |
 
 See [.docs/WORKFLOW.md](.docs/WORKFLOW.md) for more details.
 
@@ -148,27 +174,32 @@ See [.docs/WORKFLOW.md](.docs/WORKFLOW.md) for more details.
 
 ```
 mac-clipboard-manager/
-├── electron/           # Electron main process files
-│   ├── main.ts        # Main process entry point (TypeScript)
-│   └── preload.ts     # Preload script for secure IPC (TypeScript)
-├── src/               # React application source
-│   ├── App.tsx        # Main application component
-│   ├── hooks/         # React hooks
-│   │   └── useClipboard.ts  # Clipboard monitoring hook
-│   ├── lib/           # Utility libraries
-│   │   └── db.ts      # Database operations
-│   └── main.tsx       # React entry point
-├── public/            # Static assets
-├── package.json       # Dependencies and scripts
-├── .docs/             # Project documentation
-│   ├── README.md      # Documentation index
-│   ├── CURRENT_STATE.md
-│   ├── ARCHITECTURE.md
-│   ├── CODE_STANDARDS.md
-│   ├── FEATURES.md
-│   ├── DATABASE.md
-│   └── WORKFLOW.md
-└── .cursorrules       # Cursor IDE rules
+├── electron/              # Electron main process files
+│   ├── main.ts           # Main process entry point
+│   ├── preload.ts        # Preload script for secure IPC
+│   ├── lib/              # Electron utilities
+│   │   └── migrations.ts # Database migration runner
+│   └── migrations/       # SQL migration files
+├── src/                  # React application source
+│   ├── App.tsx           # Main application component
+│   ├── components/       # React components
+│   │   ├── common/       # Shared components (ErrorBanner, Footer, SearchBar, SettingsMenu)
+│   │   └── history/      # History-specific components (HistoryItem, HistoryList)
+│   ├── hooks/            # Custom React hooks
+│   │   ├── mutations/    # TanStack Query mutation hooks
+│   │   └── queries/      # TanStack Query query hooks
+│   ├── lib/              # Utility libraries
+│   │   ├── db.ts         # Database operations
+│   │   ├── fp.ts         # Functional programming utilities (Result, Option, pipe)
+│   │   ├── errors.ts     # Domain-specific error types
+│   │   ├── constants.ts  # App constants
+│   │   ├── queryKeys.ts  # TanStack Query key factory
+│   │   └── utils.ts      # Utility functions
+│   ├── test/             # Test utilities and mocks
+│   └── types/            # TypeScript type definitions
+├── .docs/                # Project documentation
+├── .github/              # GitHub Actions workflows
+└── .husky/               # Git hooks
 ```
 
 ## Usage
@@ -176,10 +207,14 @@ mac-clipboard-manager/
 1. **Start the application**: Run `pnpm electron:dev` or launch the built app
 2. **Toggle window**: Press `Cmd+Shift+V` to show/hide the clipboard manager
 3. **Search**: Type in the search bar to filter clipboard history
-4. **Navigate**: Use arrow keys to select items
-5. **Copy**: Press Enter or click an item to copy it to clipboard
-6. **Delete**: Hover over an item and click the trash icon to delete it
-7. **Clear All**: Click "Clear All" button in the top bar (confirmation required)
+4. **Filter favorites**: Click the star icon next to search to show only favorites
+5. **Navigate**: Use arrow keys to select items
+6. **Copy**: Press Enter or click an item to copy it to clipboard
+7. **Favorite**: Click the star icon on an item to add/remove from favorites
+8. **Delete**: Hover over an item and click the trash icon to delete it
+9. **Load more**: Click "Load More" at the bottom to load older items
+10. **Settings**: Click the cog icon in the footer for Quit and Clear All options
+11. **System tray**: Click the menu bar icon for quick access
 
 ## Database
 
@@ -192,16 +227,53 @@ CREATE TABLE history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
     type TEXT NOT NULL DEFAULT 'text',
+    is_favorite INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE INDEX idx_history_is_favorite ON history(is_favorite);
+CREATE INDEX idx_history_created_at ON history(created_at DESC);
 ```
+
+## Testing
+
+The project includes a comprehensive test suite using Vitest and React Testing Library.
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage report
+pnpm test:coverage
+
+# Run tests with UI
+pnpm test:ui
+```
+
+See [.docs/TESTING.md](.docs/TESTING.md) for testing documentation and patterns.
 
 ## Development Status
 
-This is an active development project. Current focus areas:
-- Core functionality is working
-- UI/UX improvements in progress
-- Additional features planned (see [.docs/CURRENT_STATE.md](.docs/CURRENT_STATE.md) and [.docs/FEATURES.md](.docs/FEATURES.md))
+This is an active development project. See [.docs/CURRENT_STATE.md](.docs/CURRENT_STATE.md) for detailed implementation status.
+
+**Completed Phases:**
+- ✅ Phase 1: Core Enhancements
+- ✅ Phase 2: Favorites System
+- ✅ Phase 3: Pagination & Performance
+- ✅ Phase 4.5: Code Refactoring & Component Extraction
+- ✅ Phase 5: TanStack Query Integration
+- ✅ Phase 7: Automated Testing Suite (unit/integration/component)
+- ✅ Phase 8: Pre-Push Git Hook
+- ✅ Phase 9: CI/CD Pipeline (partial)
+- ✅ Phase 10: Functional Programming Refactor
+
+**In Progress:**
+- Phase 4: Polish & Settings (settings window)
+- Phase 6: Persisted Snippets Management
+- Phase 7: E2E Testing (deferred)
 
 ## Contributing
 
@@ -210,6 +282,7 @@ This is a personal-use project, but suggestions and feedback are welcome. Please
 - [Features](.docs/FEATURES.md) - Planned features and roadmap
 - [Architecture](.docs/ARCHITECTURE.md) - System design
 - [Code Standards](.docs/CODE_STANDARDS.md) - Quality requirements
+- [Testing](.docs/TESTING.md) - Testing documentation
 
 ## License
 
@@ -220,3 +293,4 @@ This is a personal-use project, but suggestions and feedback are welcome. Please
 - Built with [Electron](https://www.electronjs.org/)
 - UI components with [Lucide React](https://lucide.dev/)
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Data management with [TanStack Query](https://tanstack.com/query)
