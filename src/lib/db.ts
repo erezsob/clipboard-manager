@@ -17,21 +17,25 @@ export interface GetHistoryOptions {
 	offset?: number;
 }
 
+async function withElectronAPI<T>(
+	operation: () => Promise<T>,
+	errorMessage: string,
+): Promise<Result<T, DbError>> {
+	const apiResult = await waitForElectronAPIResult();
+	if (!apiResult.ok) return apiResult;
+
+	return tryCatchAsync(operation, (error) => queryFailed(errorMessage, error));
+}
+
 /**
  * Get history items with pagination support.
  * Returns a Result for explicit error handling.
  */
-export async function getHistoryResult(
-	options: GetHistoryOptions = {},
-): Promise<Result<HistoryItem[], DbError>> {
-	const apiResult = await waitForElectronAPIResult();
-	if (!apiResult.ok) return apiResult;
-
-	return tryCatchAsync(
+export const getHistoryResult = (options: GetHistoryOptions = {}) =>
+	withElectronAPI(
 		() => window.electronAPI.db.getHistory(options),
-		(error) => queryFailed("Failed to get history", error),
+		"Failed to get history",
 	);
-}
 
 /**
  * Delete a history item by ID.
@@ -40,14 +44,9 @@ export async function getHistoryResult(
 export async function deleteHistoryItemResult(
 	id: number,
 ): Promise<Result<void, DbError>> {
-	const apiResult = await waitForElectronAPIResult();
-	if (!apiResult.ok) return apiResult;
-
-	return tryCatchAsync(
-		async () => {
-			await window.electronAPI.db.deleteHistoryItem(id);
-		},
-		(error) => queryFailed("Failed to delete history item", error),
+	return withElectronAPI(
+		() => window.electronAPI.db.deleteHistoryItem(id),
+		"Failed to delete history item",
 	);
 }
 
@@ -56,14 +55,9 @@ export async function deleteHistoryItemResult(
  * Returns a Result for explicit error handling.
  */
 export async function clearAllHistoryResult(): Promise<Result<void, DbError>> {
-	const apiResult = await waitForElectronAPIResult();
-	if (!apiResult.ok) return apiResult;
-
-	return tryCatchAsync(
-		async () => {
-			await window.electronAPI.db.clearAllHistory();
-		},
-		(error) => queryFailed("Failed to clear all history", error),
+	return withElectronAPI(
+		() => window.electronAPI.db.clearAllHistory(),
+		"Failed to clear all history",
 	);
 }
 
@@ -74,12 +68,9 @@ export async function clearAllHistoryResult(): Promise<Result<void, DbError>> {
 export async function toggleFavoriteResult(
 	id: number,
 ): Promise<Result<boolean, DbError>> {
-	const apiResult = await waitForElectronAPIResult();
-	if (!apiResult.ok) return apiResult;
-
-	return tryCatchAsync(
+	return withElectronAPI(
 		() => window.electronAPI.db.toggleFavorite(id),
-		(error) => queryFailed("Failed to toggle favorite", error),
+		"Failed to toggle favorite",
 	);
 }
 
@@ -91,13 +82,8 @@ export async function toggleFavoriteResult(
 export async function addClipResult(
 	text: string,
 ): Promise<Result<void, DbError>> {
-	const apiResult = await waitForElectronAPIResult();
-	if (!apiResult.ok) return apiResult;
-
-	return tryCatchAsync(
-		async () => {
-			await window.electronAPI.db.addClip(text);
-		},
-		(error) => queryFailed("Failed to add clip", error),
+	return withElectronAPI(
+		() => window.electronAPI.db.addClip(text),
+		"Failed to add clip",
 	);
 }
