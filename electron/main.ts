@@ -51,6 +51,32 @@ export const isEmptyText = (text: string | null | undefined): boolean =>
 	!text || text.trim().length === 0;
 
 /**
+ * Maximum allowed clipboard content size (1MB).
+ * Prevents storing excessively large content.
+ */
+const MAX_CLIP_SIZE = 1_000_000;
+
+/**
+ * Validates that an id is a positive integer.
+ * Pure function.
+ */
+export const isValidId = (id: unknown): id is number =>
+	typeof id === "number" && Number.isInteger(id) && id > 0;
+
+/**
+ * Validates pagination parameters.
+ * Pure function.
+ */
+export const isValidPaginationParams = (
+	limit: unknown,
+	offset: unknown,
+): boolean =>
+	(limit === undefined ||
+		(typeof limit === "number" && Number.isInteger(limit) && limit > 0)) &&
+	(offset === undefined ||
+		(typeof offset === "number" && Number.isInteger(offset) && offset >= 0));
+
+/**
  * Builds a SQL query for history with optional filters.
  * Pure function - returns query string and params.
  */
@@ -331,6 +357,13 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 			offset?: number;
 		} = {},
 	) => {
+		// Validate pagination parameters
+		if (!isValidPaginationParams(options.limit, options.offset)) {
+			throw new Error(
+				`Invalid pagination parameters: limit=${options.limit}, offset=${options.offset}`,
+			);
+		}
+
 		const db = dbModule.getDb();
 		const { sql, params } = buildHistoryQuery(options);
 		return db.prepare(sql).all(...params);
@@ -338,6 +371,13 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 
 	addClip: (_event: Electron.IpcMainInvokeEvent, text: string) => {
 		if (isEmptyText(text)) return;
+
+		// Validate text length
+		if (text.length > MAX_CLIP_SIZE) {
+			throw new Error(
+				`Clipboard content too large: ${text.length} bytes (max: ${MAX_CLIP_SIZE})`,
+			);
+		}
 
 		const db = dbModule.getDb();
 		const recent = db
@@ -355,6 +395,11 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 	},
 
 	deleteHistoryItem: (_event: Electron.IpcMainInvokeEvent, id: number) => {
+		// Validate id
+		if (!isValidId(id)) {
+			throw new Error(`Invalid history item id: ${id}`);
+		}
+
 		const db = dbModule.getDb();
 		db.prepare("DELETE FROM history WHERE id = ?").run(id);
 	},
@@ -365,15 +410,31 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 	},
 
 	toggleFavorite: (_event: Electron.IpcMainInvokeEvent, id: number) => {
+		// Validate id
+		if (!isValidId(id)) {
+			throw new Error(`Invalid history item id: ${id}`);
+		}
+
 		const db = dbModule.getDb();
+
+		// Check if item exists first
+		const existing = db
+			.prepare("SELECT id FROM history WHERE id = ?")
+			.get(id) as { id: number } | undefined;
+
+		if (!existing) {
+			throw new Error(`History item not found: ${id}`);
+		}
+
 		db.prepare(
 			"UPDATE history SET is_favorite = NOT is_favorite WHERE id = ?",
 		).run(id);
+
 		// Return the new favorite state
 		const result = db
 			.prepare("SELECT is_favorite FROM history WHERE id = ?")
 			.get(id) as { is_favorite: number } | undefined;
-		return result ? Boolean(result.is_favorite) : false;
+		return Boolean(result?.is_favorite);
 	},
 });
 
