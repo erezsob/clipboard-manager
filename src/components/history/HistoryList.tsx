@@ -11,6 +11,8 @@ interface HistoryListProps {
 	selectedIndex: number;
 	/** Ref array for scrolling to items */
 	itemRefs: RefObject<(HTMLDivElement | null)[]>;
+	/** Ref to the list container for scroll control */
+	containerRef?: RefObject<HTMLDivElement | null>;
 	/** Whether there are more items to load */
 	hasMore: boolean;
 	/** Whether more items are currently being loaded */
@@ -34,6 +36,7 @@ export function HistoryList({
 	searchQuery,
 	selectedIndex,
 	itemRefs,
+	containerRef,
 	hasMore,
 	isLoadingMore,
 	onItemClick,
@@ -43,7 +46,7 @@ export function HistoryList({
 }: HistoryListProps) {
 	if (items.length === 0) {
 		return (
-			<div className="flex-1 overflow-y-auto px-3 py-2">
+			<div ref={containerRef} className="flex-1 overflow-y-auto px-3 py-2">
 				<div className="text-center text-gray-400 py-8">
 					<p>No clipboard history found</p>
 					{searchQuery && (
@@ -55,7 +58,10 @@ export function HistoryList({
 	}
 
 	return (
-		<div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+		<div
+			ref={containerRef}
+			className="flex-1 overflow-y-auto px-3 py-2 space-y-1"
+		>
 			{items.map((item, index) => (
 				<div
 					key={item.id}

@@ -20,6 +20,7 @@ export function App() {
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
 	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const listContainerRef = useRef<HTMLDivElement>(null);
 
 	// Ref to hold the refresh callback (set after useHistorySearch is called)
 	const refreshOnVisibleRef = useRef<(() => Promise<void>) | null>(null);
@@ -109,6 +110,8 @@ export function App() {
 	// Set up the refresh callback for when window becomes visible
 	// This needs to be after useHistorySearch so we have access to refetchHistory
 	refreshOnVisibleRef.current = useCallback(async () => {
+		// Scroll the list to the top so the latest items are visible
+		listContainerRef.current?.scrollTo({ top: 0 });
 		await refetchHistory();
 		setSelectedIndex(0);
 	}, [refetchHistory, setSelectedIndex]);
@@ -195,6 +198,7 @@ export function App() {
 				searchQuery={searchQuery}
 				selectedIndex={selectedIndex}
 				itemRefs={itemRefs}
+				containerRef={listContainerRef}
 				hasMore={hasMore}
 				isLoadingMore={isLoadingMore}
 				onItemClick={handleItemClick}
