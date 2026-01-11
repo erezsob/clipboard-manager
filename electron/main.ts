@@ -319,7 +319,7 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 			limit?: number;
 			favoritesOnly?: boolean;
 			offset?: number;
-		},
+		} = {},
 	) => {
 		const db = dbModule.getDb();
 		const { sql, params } = buildHistoryQuery(options);
