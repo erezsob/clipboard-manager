@@ -206,7 +206,7 @@ const createWindowModule = () => {
 	let mainWindow: BrowserWindow | null = null;
 	let blurTimeout: NodeJS.Timeout | null = null;
 
-	const create = (): void => {
+	const create = async (): Promise<void> => {
 		mainWindow = new BrowserWindow({
 			width: 450,
 			height: 600,
@@ -223,10 +223,20 @@ const createWindowModule = () => {
 
 		// Load the app
 		const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
-		if (isDev) {
-			mainWindow.loadURL("http://localhost:5173");
-		} else {
-			mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+		try {
+			if (isDev) {
+				await mainWindow.loadURL("http://localhost:5173");
+			} else {
+				await mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+			}
+		} catch (error) {
+			console.error("Failed to load application:", error);
+			dialog.showErrorBox(
+				"Load Error",
+				`Failed to load the application.\n\n${error instanceof Error ? error.message : String(error)}\n\nThe application will now quit.`,
+			);
+			app.quit();
+			return;
 		}
 
 		// Center window on screen
@@ -546,7 +556,7 @@ app.whenReady().then(async () => {
 		dbModule.init(dbPath);
 
 		// Create window and tray
-		windowModule.create();
+		await windowModule.create();
 		trayModule.create();
 
 		// Register IPC handlers
@@ -566,7 +576,9 @@ app.whenReady().then(async () => {
 
 		app.on("activate", () => {
 			if (BrowserWindow.getAllWindows().length === 0) {
-				windowModule.create();
+				windowModule.create().catch((error) => {
+					console.error("Failed to create window on activate:", error);
+				});
 			}
 		});
 	} catch (error) {
