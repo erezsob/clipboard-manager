@@ -521,6 +521,9 @@ const createWindowHandlers = (
 	hide: () => windowModule.hide(),
 	isVisible: () => windowModule.isVisible(),
 	hideAndPaste: async () => {
+		// Auto-paste only works on macOS (requires AppleScript)
+		if (process.platform !== "darwin") return;
+
 		windowModule.hide();
 		// Wait for focus to transfer to previous application
 		await new Promise((resolve) => setTimeout(resolve, PASTE_DELAY_MS));
