@@ -208,6 +208,18 @@ Legacy functions (`retryOperation`, `waitFor`) are kept with `@deprecated` tags.
 
 See also: [`.docs/TESTING.md`](./TESTING.md) for testing patterns and examples.
 
+### Requirement: Tests for Every Change
+
+**All code changes must include corresponding tests.** This applies to:
+- New features — test the user-facing behavior
+- Bug fixes — add a test that would have caught the bug
+- Refactors — ensure existing tests still pass (add tests if coverage was missing)
+
+Exceptions (must be justified in PR):
+- Pure configuration changes
+- Documentation-only changes
+- Changes where testing is impractical (e.g., native OS integrations like AppleScript)
+
 ### Core Philosophy: Write tests. Not too many. Mostly integration.
 
 - **Write tests for confidence**, not for coverage metrics
@@ -341,6 +353,7 @@ await waitFor(() => expect(result).toBe(true))
 - [ ] Follow best practices
 - [ ] No direct DOM manipulation (use refs instead)
 - [ ] Named exports used (no default exports)
+- [ ] **Tests included for all changes** — Every PR must include tests covering the new/modified functionality
 - [ ] Tests cover use cases, not implementation details
 - [ ] Tests use appropriate queries (prefer `*ByRole`)
 

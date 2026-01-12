@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		show: () => ipcRenderer.invoke("window:show") as Promise<void>,
 		hide: () => ipcRenderer.invoke("window:hide") as Promise<void>,
 		isVisible: () => ipcRenderer.invoke("window:isVisible") as Promise<boolean>,
+		hideAndPaste: () =>
+			ipcRenderer.invoke("window:hideAndPaste") as Promise<void>,
 	},
 	app: {
 		quit: () => ipcRenderer.invoke("app:quit") as Promise<void>,

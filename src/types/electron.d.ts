@@ -30,6 +30,7 @@ interface ElectronAPI {
 		show: () => Promise<void>;
 		hide: () => Promise<void>;
 		isVisible: () => Promise<boolean>;
+		hideAndPaste: () => Promise<void>;
 	};
 	app: {
 		quit: () => Promise<void>;

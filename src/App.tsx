@@ -48,10 +48,19 @@ export function App() {
 		loadMore,
 	} = useHistorySearch();
 
-	// Callback to hide window and reset search state
+	// Callback to hide window and reset search state (used for Escape key)
 	const hideWindow = useCallback(async () => {
 		if (window.electronAPI) {
 			await window.electronAPI.window.hide();
+		}
+		setIsVisible(false);
+		setSearchQuery("");
+	}, [setIsVisible, setSearchQuery]);
+
+	// Callback to hide window, auto-paste, and reset search state (used after item selection)
+	const hideWindowAndPaste = useCallback(async () => {
+		if (window.electronAPI) {
+			await window.electronAPI.window.hideAndPaste();
 		}
 		setIsVisible(false);
 		setSearchQuery("");
@@ -63,9 +72,9 @@ export function App() {
 			if (window.electronAPI) {
 				await window.electronAPI.clipboard.writeText(item.content);
 			}
-			await hideWindow();
+			await hideWindowAndPaste();
 		},
-		[hideWindow],
+		[hideWindowAndPaste],
 	);
 
 	// Stable callback for scrolling to item
@@ -97,7 +106,7 @@ export function App() {
 		filteredHistory,
 		selectedIndex,
 		setSelectedIndex,
-		onHideWindow: hideWindow,
+		onHideWindow: hideWindowAndPaste,
 	});
 
 	// Combine errors from search and actions
