@@ -25,7 +25,8 @@
 		"types:check": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
 		"knip": "knip",
 		"prepare": "husky",
-		"postinstall": "electron-rebuild -f -w better-sqlite3"
+		"postinstall": "electron-rebuild -f -w better-sqlite3",
+		"build-and-open": "pnpm electron:build && open \"release/Clipboard Manager-0.1.0-arm64.dmg\""
 	},
 	"dependencies": {
 		"@tanstack/react-query": "^5.90.16",
