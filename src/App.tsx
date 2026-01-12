@@ -7,6 +7,7 @@ import { useHistorySearch } from "./hooks/useHistorySearch";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useWindowVisibility } from "./hooks/useWindowVisibility";
 import type { HistoryItem } from "./lib/db";
+import { tryCatchAsync } from "./lib/fp";
 
 /**
  * Main application component for clipboard manager
@@ -50,18 +51,34 @@ export function App() {
 
 	// Callback to hide window and reset search state (used for Escape key)
 	const hideWindow = useCallback(async () => {
-		if (window.electronAPI) {
-			await window.electronAPI.window.hide();
-		}
+		await tryCatchAsync(
+			async () => {
+				if (window.electronAPI) {
+					await window.electronAPI.window.hide();
+				}
+			},
+			(error) => {
+				console.error("Failed to hide window:", error);
+			},
+		);
+		// Always reset UI state to prevent inconsistency
 		setIsVisible(false);
 		setSearchQuery("");
 	}, [setIsVisible, setSearchQuery]);
 
 	// Callback to hide window, auto-paste, and reset search state (used after item selection)
 	const hideWindowAndPaste = useCallback(async () => {
-		if (window.electronAPI) {
-			await window.electronAPI.window.hideAndPaste();
-		}
+		await tryCatchAsync(
+			async () => {
+				if (window.electronAPI) {
+					await window.electronAPI.window.hideAndPaste();
+				}
+			},
+			(error) => {
+				console.error("Failed to hide window and paste:", error);
+			},
+		);
+		// Always reset UI state to prevent inconsistency
 		setIsVisible(false);
 		setSearchQuery("");
 	}, [setIsVisible, setSearchQuery]);
