@@ -10,8 +10,13 @@ import {
 	ipcMain,
 	Menu,
 	nativeImage,
+	shell,
 	Tray,
 } from "electron";
+import {
+	checkAccessibilityPermission,
+	simulatePaste,
+} from "./lib/applescript.js";
 import { runMigrations } from "./lib/migrations.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -71,6 +76,12 @@ export const isEmptyText = (text: string | null | undefined): boolean =>
  * Prevents storing excessively large content.
  */
 const MAX_CLIP_CHARS = 1_000_000;
+
+/**
+ * Delay in milliseconds before simulating paste after hiding window.
+ * Allows time for focus to transfer to the previous application.
+ */
+const PASTE_DELAY_MS = 100;
 
 /**
  * Validates that an id is a positive integer.
@@ -509,6 +520,19 @@ const createWindowHandlers = (
 	show: () => windowModule.show(),
 	hide: () => windowModule.hide(),
 	isVisible: () => windowModule.isVisible(),
+	hideAndPaste: async () => {
+		// Auto-paste only works on macOS (requires AppleScript)
+		if (process.platform !== "darwin") return;
+
+		windowModule.hide();
+		// Wait for focus to transfer to previous application
+		await new Promise((resolve) => setTimeout(resolve, PASTE_DELAY_MS));
+		try {
+			await simulatePaste();
+		} catch (error) {
+			console.error("Failed to simulate paste:", error);
+		}
+	},
 });
 
 // ============================================================================
@@ -543,6 +567,7 @@ const registerIpcHandlers = (): void => {
 	ipcMain.handle("window:show", windowHandlers.show);
 	ipcMain.handle("window:hide", windowHandlers.hide);
 	ipcMain.handle("window:isVisible", windowHandlers.isVisible);
+	ipcMain.handle("window:hideAndPaste", windowHandlers.hideAndPaste);
 
 	// App handlers
 	ipcMain.handle("app:quit", () => app.quit());
@@ -555,12 +580,37 @@ app.whenReady().then(async () => {
 		const dbPath = path.join(app.getPath("userData"), "clipboard.db");
 		dbModule.init(dbPath);
 
+		// Register IPC handlers before creating window (renderer needs them immediately)
+		registerIpcHandlers();
+
 		// Create window and tray
 		await windowModule.create();
 		trayModule.create();
 
-		// Register IPC handlers
-		registerIpcHandlers();
+		// Check Accessibility permissions on macOS (required for auto-paste)
+		// Done after window creation so it doesn't block the UI
+		if (process.platform === "darwin") {
+			const hasPermission = await checkAccessibilityPermission();
+			if (!hasPermission) {
+				const response = await dialog.showMessageBox({
+					type: "warning",
+					title: "Accessibility Permission Required",
+					message:
+						"Clipboard Manager needs Accessibility permission to auto-paste.",
+					detail:
+						"To enable auto-paste after selecting an item, please grant Accessibility permission in System Settings > Privacy & Security > Accessibility.\n\nWithout this permission, items will still be copied to clipboard, but you'll need to paste manually.",
+					buttons: ["Open System Settings", "Later"],
+					defaultId: 0,
+					cancelId: 1,
+				});
+
+				if (response.response === 0) {
+					shell.openExternal(
+						"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+					);
+				}
+			}
+		}
 
 		// Register global shortcut Cmd+Shift+V (or Ctrl+Shift+V on Windows/Linux)
 		const shortcut = "CommandOrControl+Shift+V";

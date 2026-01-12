@@ -37,6 +37,7 @@ export interface MockElectronAPI {
 		show: Mock<() => Promise<void>>;
 		hide: Mock<() => Promise<void>>;
 		isVisible: Mock<() => Promise<boolean>>;
+		hideAndPaste: Mock<() => Promise<void>>;
 	};
 	app: {
 		quit: Mock<() => Promise<void>>;
@@ -65,6 +66,7 @@ export function createMockElectronAPI(): MockElectronAPI {
 			show: vi.fn().mockResolvedValue(undefined),
 			hide: vi.fn().mockResolvedValue(undefined),
 			isVisible: vi.fn().mockResolvedValue(false),
+			hideAndPaste: vi.fn().mockResolvedValue(undefined),
 		},
 		app: {
 			quit: vi.fn().mockResolvedValue(undefined),
