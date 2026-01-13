@@ -33,19 +33,17 @@ This is a personal-use macOS clipboard manager built with Electron, React, TypeS
 ## When Making Changes
 1. Review `.docs/AGENT_WORKFLOW.md` for recommended interaction patterns
 2. Check `.docs/CURRENT_STATE.md` for what's already implemented
-3. Follow patterns in existing code
+3. Follow patterns in existing code and the code standards in `.docs/CODE_STANDARDS.md`
 4. Update relevant documentation files in `.docs/` when work is complete
 5. Run `pnpm types:check` and `pnpm lint` before committing
 6. Ensure pre-push git hook passes (formatting, linting, types, knip)
-
-## Key Documentation Files
-- Agent Workflow: `.docs/AGENT_WORKFLOW.md` - How to work with AI agents (READ THIS FIRST)
-- Current State: `.docs/CURRENT_STATE.md` - What's implemented
-- Architecture: `.docs/ARCHITECTURE.md` - System design & tech stack
-- Code Standards: `.docs/CODE_STANDARDS.md` - Quality requirements
-- Features: `.docs/FEATURES.md` - Feature specs & roadmap
-- Database: `.docs/DATABASE.md` - Schema & migrations
-- Workflow: `.docs/WORKFLOW.md` - Development process
+7. Add tests for new functionality and refactors
+8. Run `pnpm test` and `pnpm test:coverage` to ensure all tests pass and coverage is at 100%
+9. Update the current state in `.docs/CURRENT_STATE.md` to reflect the changes
+10. Update the features roadmap in `.docs/FEATURES.md` to reflect the changes
+11. Update the database schema in `.docs/DATABASE.md` to reflect the changes
+12. Update the development process in `.docs/WORKFLOW.md` to reflect the changes
+13. Update the architecture in `.docs/ARCHITECTURE.md` to reflect the changes
 
 ## Tech Stack
 - Frontend: React 19 + TypeScript + Tailwind CSS v4
