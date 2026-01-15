@@ -278,6 +278,19 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Easier maintenance (changes isolated to specific components/hooks)
   - Better code organization and discoverability
 
+### RTF Clipboard Support
+**Plan Document**: [`.docs/plans/rtf_clipboard_support.md`](.docs/plans/rtf_clipboard_support.md)
+
+Add RTF format support to preserve rich text styling when copying/pasting clipboard items. Plain text continues for search/display; RTF stored and restored transparently.
+
+- **Database**: Add nullable `rtf` column to history table
+- **Capture Flow**: Read both text and RTF from clipboard, store both
+- **Paste Flow**: Write both text and RTF to clipboard using `clipboard.write()`
+- **Benefits**:
+  - Rich text formatting preserved across copy/paste
+  - No UI changes required (optional RTF indicator later)
+  - HTML support can follow same pattern
+
 ### Functional Programming Refactor
 **Plan Document**: [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md)
 
@@ -313,6 +326,7 @@ Introduce custom lightweight FP utilities and refactor the codebase to embrace f
 - 🔮 Spotlight search integration
 
 ### Medium Priority (Future)
+- 🔮 HTML clipboard support (same pattern as RTF)
 - 🔮 Image/file clipboard support
 - 🔮 Content filtering (ignore passwords/sensitive data)
 - 🔮 Advanced duplicate detection (fuzzy matching)
