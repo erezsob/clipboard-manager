@@ -351,32 +351,11 @@ const createTrayModule = (
 	let tray: Tray | null = null;
 
 	const create = (): void => {
-		// Create a simple programmatic icon for the tray
-		// On macOS, tray icons should be template images (black with transparency)
-		const iconSize = 16;
-
-		// Try to use the app icon as a fallback
-		try {
-			const appIcon = nativeImage.createFromNamedImage("NSApplicationIcon");
-			if (!appIcon.isEmpty()) {
-				tray = new Tray(appIcon.resize({ width: iconSize, height: iconSize }));
-			} else {
-				// Create a minimal icon using a 1x1 pixel image
-				// This will show as a small dot, but it's better than nothing
-				const buffer = Buffer.from(
-					"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-					"base64",
-				);
-				tray = new Tray(nativeImage.createFromBuffer(buffer));
-			}
-		} catch {
-			// Ultimate fallback: create from a tiny buffer
-			const buffer = Buffer.from(
-				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-				"base64",
-			);
-			tray = new Tray(nativeImage.createFromBuffer(buffer));
-		}
+		// Load tray icon from public folder
+		const iconPath = path.join(__dirname, "../public/tray-icon.png");
+		const icon = nativeImage.createFromPath(iconPath);
+		icon.setTemplateImage(true); // Adapts to macOS menu bar theme
+		tray = new Tray(icon.resize({ width: 16, height: 16 }));
 
 		// Guard against tray creation failure
 		if (!tray) return;
