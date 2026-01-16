@@ -352,7 +352,9 @@ const createTrayModule = (
 
 	const create = (): void => {
 		// Load tray icon from public folder
-		const iconPath = path.join(__dirname, "../public/tray-icon.png");
+		const iconPath = app.isPackaged
+			? path.join(process.resourcesPath, "tray-icon.png")
+			: path.join(__dirname, "../public/tray-icon.png");
 		const icon = nativeImage.createFromPath(iconPath);
 		icon.setTemplateImage(true); // Adapts to macOS menu bar theme
 		tray = new Tray(icon.resize({ width: 16, height: 16 }));

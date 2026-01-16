@@ -10,6 +10,7 @@ mac:
         - arm64
         - x64
   darkModeSupport: true
+  icon: build/icon.icns
 
 dmg:
   title: Clipboard Manager
@@ -42,3 +43,7 @@ extraMetadata:
 buildDependenciesFromSource: true
 nodeGypRebuild: false
 npmRebuild: true
+
+extraResources:
+  - from: public/tray-icon.png
+    to: tray-icon.png
