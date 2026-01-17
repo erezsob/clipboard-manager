@@ -7,7 +7,9 @@ CREATE TABLE history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
     type TEXT NOT NULL DEFAULT 'text',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    is_favorite INTEGER DEFAULT 0,
+    rtf TEXT
 );
 ```
 
