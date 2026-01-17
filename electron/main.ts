@@ -440,10 +440,11 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 		const { text, rtf } = data;
 		if (isEmptyText(text)) return;
 
-		// Validate text length
-		if (text.length > MAX_CLIP_CHARS) {
+		// Validate combined content size (text + RTF)
+		const totalSize = text.length + (rtf?.length ?? 0);
+		if (totalSize > MAX_CLIP_CHARS) {
 			throw new Error(
-				`Clipboard content too large: ${text.length} bytes (max: ${MAX_CLIP_CHARS})`,
+				`Clipboard content too large: ${totalSize} chars (max: ${MAX_CLIP_CHARS})`,
 			);
 		}
 
