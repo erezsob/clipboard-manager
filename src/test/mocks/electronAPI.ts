@@ -12,12 +12,12 @@ export interface MockElectronAPI {
 	};
 	db: {
 		getHistory: Mock<
-			(
-				query?: string,
-				limit?: number,
-				favoritesOnly?: boolean,
-				offset?: number,
-			) => Promise<
+			(options?: {
+				query?: string;
+				limit?: number;
+				favoritesOnly?: boolean;
+				offset?: number;
+			}) => Promise<
 				Array<{
 					id: number;
 					content: string;
