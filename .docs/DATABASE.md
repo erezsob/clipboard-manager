@@ -26,9 +26,18 @@ CREATE INDEX IF NOT EXISTS idx_is_favorite ON history(is_favorite);
 - Creates index for efficient favorites filtering
 - ✅ Applied
 
+### Migration 003: Add RTF Support
+```sql
+ALTER TABLE history ADD COLUMN rtf TEXT;
+```
+- Adds nullable `rtf` column for storing RTF clipboard data
+- Plain text stored in `content`, RTF stored separately
+- Preserves rich text formatting on paste
+- ✅ Applied
+
 ## Planned Migrations
 
-### Migration 003: Create Snippets Table
+### Migration 004: Create Snippets Table
 ```sql
 CREATE TABLE snippets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

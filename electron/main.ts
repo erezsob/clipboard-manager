@@ -36,6 +36,15 @@ type HistoryRow = {
 	type: string;
 	created_at: string;
 	is_favorite: number;
+	rtf: string | null;
+};
+
+/**
+ * Clipboard data for reading/writing with optional RTF.
+ */
+type ClipboardData = {
+	text: string;
+	rtf?: string;
 };
 
 // ============================================================================
@@ -158,7 +167,7 @@ export const buildHistoryQuery = (options: {
 
 	const whereClause =
 		conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
-	const sql = `SELECT id, content, type, created_at, is_favorite FROM history${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+	const sql = `SELECT id, content, type, created_at, is_favorite, rtf FROM history${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
 	params.push(limit, offset);
 
@@ -390,9 +399,16 @@ const createTrayModule = (
  * Creates clipboard IPC handlers
  */
 const createClipboardHandlers = () => ({
-	readText: () => clipboard.readText(),
-	writeText: (_event: Electron.IpcMainInvokeEvent, text: string) =>
-		clipboard.writeText(text),
+	read: (): ClipboardData => ({
+		text: clipboard.readText(),
+		rtf: clipboard.readRTF() || undefined,
+	}),
+	write: (_event: Electron.IpcMainInvokeEvent, data: ClipboardData) => {
+		clipboard.write({
+			text: data.text,
+			rtf: data.rtf || undefined,
+		});
+	},
 });
 
 /**
@@ -420,7 +436,8 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 		return db.prepare(sql).all(...params) as HistoryRow[];
 	},
 
-	addClip: (_event: Electron.IpcMainInvokeEvent, text: string) => {
+	addClip: (_event: Electron.IpcMainInvokeEvent, data: ClipboardData) => {
+		const { text, rtf } = data;
 		if (isEmptyText(text)) return;
 
 		// Validate text length
@@ -439,9 +456,10 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 			return;
 		}
 
-		db.prepare("INSERT INTO history (content, type) VALUES (?, ?)").run(
+		db.prepare("INSERT INTO history (content, type, rtf) VALUES (?, ?, ?)").run(
 			text,
 			"text",
+			rtf || null,
 		);
 	},
 
@@ -533,8 +551,8 @@ const windowHandlers = createWindowHandlers(windowModule);
 // Register all IPC handlers
 const registerIpcHandlers = (): void => {
 	// Clipboard handlers
-	ipcMain.handle("clipboard:readText", clipboardHandlers.readText);
-	ipcMain.handle("clipboard:writeText", clipboardHandlers.writeText);
+	ipcMain.handle("clipboard:read", clipboardHandlers.read);
+	ipcMain.handle("clipboard:write", clipboardHandlers.write);
 
 	// Database handlers
 	ipcMain.handle("db:getHistory", dbHandlers.getHistory);

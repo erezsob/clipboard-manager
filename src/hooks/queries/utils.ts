@@ -73,11 +73,19 @@ export const formatActionError = (
 };
 
 /**
- * Writes text to clipboard with retry logic.
+ * Clipboard data for writing.
+ */
+interface ClipboardWriteData {
+	text: string;
+	rtf?: string | null;
+}
+
+/**
+ * Writes text (and optionally RTF) to clipboard with retry logic.
  * Returns a Result for explicit error handling.
  */
 export async function writeToClipboardWithRetry(
-	text: string,
+	data: ClipboardWriteData,
 ): Promise<Result<void, ClipboardError>> {
 	if (!window.electronAPI) {
 		return err(clipboardApiNotAvailable());
@@ -85,7 +93,10 @@ export async function writeToClipboardWithRetry(
 
 	const result = await retryWithBackoff({
 		operation: async () => {
-			await window.electronAPI.clipboard.writeText(text);
+			await window.electronAPI.clipboard.write({
+				text: data.text,
+				rtf: data.rtf || undefined,
+			});
 		},
 	});
 

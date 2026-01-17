@@ -2,9 +2,13 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
 	clipboard: {
-		readText: () => ipcRenderer.invoke("clipboard:readText") as Promise<string>,
-		writeText: (text: string) =>
-			ipcRenderer.invoke("clipboard:writeText", text) as Promise<void>,
+		read: () =>
+			ipcRenderer.invoke("clipboard:read") as Promise<{
+				text: string;
+				rtf?: string;
+			}>,
+		write: (data: { text: string; rtf?: string }) =>
+			ipcRenderer.invoke("clipboard:write", data) as Promise<void>,
 	},
 	db: {
 		getHistory: (options?: {
@@ -20,10 +24,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 					type: string;
 					created_at: string;
 					is_favorite: number;
+					rtf: string | null;
 				}>
 			>,
-		addClip: (text: string) =>
-			ipcRenderer.invoke("db:addClip", text) as Promise<void>,
+		addClip: (data: { text: string; rtf?: string }) =>
+			ipcRenderer.invoke("db:addClip", data) as Promise<void>,
 		deleteHistoryItem: (id: number) =>
 			ipcRenderer.invoke("db:deleteHistoryItem", id) as Promise<void>,
 		clearAllHistory: () =>

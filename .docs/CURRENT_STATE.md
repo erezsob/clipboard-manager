@@ -1,10 +1,11 @@
 # Current Implementation Status
 
-**Last Updated**: 2026-01-15
+**Last Updated**: 2026-01-17
 
 ## ✅ Already Implemented
 
-- Basic clipboard history tracking (text only)
+- Clipboard history tracking (text and RTF)
+- RTF format preservation (transparent capture and restore)
 - SQLite database with `history` table
 - Window toggle via `Cmd+Shift+V` keyboard shortcut
 - Search functionality
@@ -217,34 +218,34 @@
 4. ✅ Remove deprecated functions from `db.ts`, `utils.ts`
 5. ✅ Update tests for new function signatures
 
-### Phase 11: RTF Clipboard Support (Priority: Medium)
+### Phase 11: RTF Clipboard Support (Priority: Medium) ✅
 **Plan Document**: [`.docs/plans/rtf_clipboard_support.md`](.docs/plans/rtf_clipboard_support.md)
 
 Add RTF format support to preserve rich text styling when copying/pasting. Plain text for search/display; RTF stored and restored transparently.
 
-**Phase 1: Database Migration** 🔨
-1. 🔨 Create `003_add_rtf.sql` migration - add nullable `rtf` column
+**Phase 1: Database Migration** ✅
+1. ✅ Create `003_add_rtf.sql` migration - add nullable `rtf` column
 
-**Phase 2: Main Process Changes** 🔨
-1. 🔨 Update `HistoryRow` type with `rtf: string | null`
-2. 🔨 Update `buildHistoryQuery` to SELECT `rtf` column
-3. 🔨 Update `createClipboardHandlers`: `read` returns `{ text, rtf }`, `write` accepts `{ text, rtf? }`
-4. 🔨 Update `addClip` handler to accept and store both formats
+**Phase 2: Main Process Changes** ✅
+1. ✅ Update `HistoryRow` type with `rtf: string | null`
+2. ✅ Update `buildHistoryQuery` to SELECT `rtf` column
+3. ✅ Update `createClipboardHandlers`: `read` returns `{ text, rtf }`, `write` accepts `{ text, rtf? }`
+4. ✅ Update `addClip` handler to accept and store both formats
 
-**Phase 3: Preload & Types** 🔨
-1. 🔨 Update `preload.ts` with new clipboard API signatures
-2. 🔨 Update `electron.d.ts` TypeScript types
+**Phase 3: Preload & Types** ✅
+1. ✅ Update `preload.ts` with new clipboard API signatures
+2. ✅ Update `electron.d.ts` TypeScript types
 
-**Phase 4: Frontend Integration** 🔨
-1. 🔨 Update `src/lib/db.ts` - add `rtf` to `HistoryItem` interface
-2. 🔨 Update `useClipboardMonitor.ts` - read both text and RTF, pass to `addClip`
-3. 🔨 Update `src/hooks/queries/utils.ts` - update `writeToClipboardWithRetry` for RTF
-4. 🔨 Update `useHistoryActions.ts` - pass `item.rtf` to clipboard write
+**Phase 4: Frontend Integration** ✅
+1. ✅ Update `src/lib/db.ts` - add `rtf` to `HistoryItem` interface
+2. ✅ Update `useClipboardMonitor.ts` - read both text and RTF, pass to `addClip`
+3. ✅ Update `src/hooks/queries/utils.ts` - update `writeToClipboardWithRetry` for RTF
+4. ✅ Update `useHistoryActions.ts` - pass `item.rtf` to clipboard write
 
-**Phase 5: Tests & Mocks** 🔨
-1. 🔨 Update `src/test/mocks/electronAPI.ts` with new signatures
-2. 🔨 Update `src/test/mocks/history.ts` to include `rtf` field
-3. 🔨 Update affected test files for new interfaces
+**Phase 5: Tests & Mocks** ✅
+1. ✅ Update `src/test/mocks/electronAPI.ts` with new signatures
+2. ✅ Update `src/test/mocks/history.ts` to include `rtf` field
+3. ✅ Update affected test files for new interfaces
 
 ## Known Issues
 

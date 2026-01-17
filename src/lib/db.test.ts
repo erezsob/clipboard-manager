@@ -18,17 +18,32 @@ describe("db", () => {
 		it("returns ok result when successful", async () => {
 			const mockApi = getMockElectronAPI();
 
-			const result = await addClipResult("test content");
+			const result = await addClipResult({ text: "test content" });
 
 			expect(result.ok).toBe(true);
-			expect(mockApi.db.addClip).toHaveBeenCalledWith("test content");
+			expect(mockApi.db.addClip).toHaveBeenCalledWith({ text: "test content" });
+		});
+
+		it("returns ok result with RTF when provided", async () => {
+			const mockApi = getMockElectronAPI();
+
+			const result = await addClipResult({
+				text: "test content",
+				rtf: "{\\rtf1 test}",
+			});
+
+			expect(result.ok).toBe(true);
+			expect(mockApi.db.addClip).toHaveBeenCalledWith({
+				text: "test content",
+				rtf: "{\\rtf1 test}",
+			});
 		});
 
 		it("returns error result when API call fails", async () => {
 			const mockApi = getMockElectronAPI();
 			mockApi.db.addClip.mockRejectedValue(new Error("Add failed"));
 
-			const result = await addClipResult("test content");
+			const result = await addClipResult({ text: "test content" });
 
 			expect(result.ok).toBe(false);
 			if (!result.ok) {

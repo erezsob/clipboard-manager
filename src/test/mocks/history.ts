@@ -10,6 +10,7 @@ export function createMockHistoryItem(
 		type: string;
 		created_at: string;
 		is_favorite: number;
+		rtf: string | null;
 	}> = {},
 ) {
 	return {
@@ -18,6 +19,7 @@ export function createMockHistoryItem(
 		type: "text",
 		created_at: new Date().toISOString(),
 		is_favorite: 0,
+		rtf: null,
 		...overrides,
 	};
 }
@@ -33,6 +35,7 @@ export function createMockHistoryItems(
 	baseOverrides: Partial<{
 		type: string;
 		is_favorite: number;
+		rtf: string | null;
 	}> = {},
 ) {
 	return Array.from({ length: count }, (_, index) =>

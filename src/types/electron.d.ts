@@ -1,9 +1,14 @@
 /// <reference types="vite/client" />
 
+interface ClipboardData {
+	text: string;
+	rtf?: string;
+}
+
 interface ElectronAPI {
 	clipboard: {
-		readText: () => Promise<string>;
-		writeText: (text: string) => Promise<void>;
+		read: () => Promise<ClipboardData>;
+		write: (data: ClipboardData) => Promise<void>;
 	};
 	db: {
 		getHistory: (options?: {
@@ -18,9 +23,10 @@ interface ElectronAPI {
 				type: string;
 				created_at: string;
 				is_favorite: number;
+				rtf: string | null;
 			}>
 		>;
-		addClip: (text: string) => Promise<void>;
+		addClip: (data: ClipboardData) => Promise<void>;
 		deleteHistoryItem: (id: number) => Promise<void>;
 		clearAllHistory: () => Promise<void>;
 		toggleFavorite: (id: number) => Promise<boolean>;

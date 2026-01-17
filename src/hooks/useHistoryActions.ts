@@ -73,7 +73,10 @@ export function useHistoryActions({
 		async (item: HistoryItem) => {
 			setError(null);
 
-			const result = await writeToClipboardWithRetry(item.content);
+			const result = await writeToClipboardWithRetry({
+				text: item.content,
+				rtf: item.rtf,
+			});
 
 			if (result.ok) {
 				await onHideWindow();

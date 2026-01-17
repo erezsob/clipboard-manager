@@ -21,8 +21,8 @@ export function useClipboardMonitor() {
 			try {
 				if (!window.electronAPI) return;
 
-				const rawText = await window.electronAPI.clipboard.readText();
-				const currentText = normalizeClipboardText(rawText);
+				const clipboardData = await window.electronAPI.clipboard.read();
+				const currentText = normalizeClipboardText(clipboardData.text);
 				const change = detectClipboardChange(
 					currentText,
 					lastClipboardTextRef.current,
@@ -30,7 +30,10 @@ export function useClipboardMonitor() {
 
 				if (change.some) {
 					lastClipboardTextRef.current = change.value;
-					const result = await addClipResult(change.value);
+					const result = await addClipResult({
+						text: change.value,
+						rtf: clipboardData.rtf,
+					});
 					if (!result.ok) {
 						console.error("Failed to add clip:", result.error.message);
 					}
@@ -55,8 +58,10 @@ export function useClipboardMonitor() {
 
 				// Initialize with current clipboard content
 				try {
-					const rawText = await window.electronAPI.clipboard.readText();
-					lastClipboardTextRef.current = normalizeClipboardText(rawText);
+					const clipboardData = await window.electronAPI.clipboard.read();
+					lastClipboardTextRef.current = normalizeClipboardText(
+						clipboardData.text,
+					);
 				} catch (error) {
 					console.error("Error reading initial clipboard:", error);
 				}

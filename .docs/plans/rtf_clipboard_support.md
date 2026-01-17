@@ -1,25 +1,27 @@
 ---
 name: RTF Clipboard Support
 overview: Add RTF format support to preserve rich text styling when copying/pasting clipboard items. Plain text continues to work for search and display; RTF is stored and restored transparently.
+status: completed
+completed_date: 2026-01-17
 todos:
   - id: migration
     content: Create 003_add_rtf.sql migration
-    status: pending
+    status: completed
   - id: main-process
     content: Update electron/main.ts handlers for RTF read/write/store
-    status: pending
+    status: completed
   - id: preload
     content: Update preload.ts with new clipboard API signatures
-    status: pending
+    status: completed
   - id: types
     content: Update electron.d.ts TypeScript types
-    status: pending
+    status: completed
   - id: frontend
     content: Update db.ts, useClipboardMonitor, utils.ts, useHistoryActions
-    status: pending
+    status: completed
   - id: tests
     content: Update mocks and tests for new interfaces
-    status: pending
+    status: completed
 ---
 
 # RTF Clipboard Support
