@@ -449,11 +449,15 @@ const createDbHandlers = (dbModule: ReturnType<typeof createDbModule>) => ({
 
 		const db = dbModule.getDb();
 		const recent = db
-			.prepare("SELECT content FROM history ORDER BY created_at DESC LIMIT 1")
-			.get() as { content: string } | undefined;
+			.prepare(
+				"SELECT content, rtf FROM history ORDER BY created_at DESC LIMIT 1",
+			)
+			.get() as { content: string; rtf: string | null } | undefined;
 
-		if (recent && isNearDuplicate(text, recent.content)) {
-			return;
+		if (recent) {
+			const sameText = isNearDuplicate(text, recent.content);
+			const sameRtf = (rtf ?? null) === (recent.rtf ?? null);
+			if (sameText && sameRtf) return;
 		}
 
 		db.prepare("INSERT INTO history (content, type, rtf) VALUES (?, ?, ?)").run(
