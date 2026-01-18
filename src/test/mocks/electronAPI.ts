@@ -7,27 +7,28 @@ import { vi } from "vitest";
  */
 export interface MockElectronAPI {
 	clipboard: {
-		readText: Mock<() => Promise<string>>;
-		writeText: Mock<(text: string) => Promise<void>>;
+		read: Mock<() => Promise<ClipboardData>>;
+		write: Mock<(data: ClipboardData) => Promise<void>>;
 	};
 	db: {
 		getHistory: Mock<
-			(
-				query?: string,
-				limit?: number,
-				favoritesOnly?: boolean,
-				offset?: number,
-			) => Promise<
+			(options?: {
+				query?: string;
+				limit?: number;
+				favoritesOnly?: boolean;
+				offset?: number;
+			}) => Promise<
 				Array<{
 					id: number;
 					content: string;
 					type: string;
 					created_at: string;
 					is_favorite: number;
+					rtf: string | null;
 				}>
 			>
 		>;
-		addClip: Mock<(text: string) => Promise<void>>;
+		addClip: Mock<(data: ClipboardData) => Promise<void>>;
 		deleteHistoryItem: Mock<(id: number) => Promise<void>>;
 		clearAllHistory: Mock<() => Promise<void>>;
 		toggleFavorite: Mock<(id: number) => Promise<boolean>>;
@@ -51,8 +52,8 @@ export interface MockElectronAPI {
 export function createMockElectronAPI(): MockElectronAPI {
 	return {
 		clipboard: {
-			readText: vi.fn().mockResolvedValue(""),
-			writeText: vi.fn().mockResolvedValue(undefined),
+			read: vi.fn().mockResolvedValue({ text: "", rtf: undefined }),
+			write: vi.fn().mockResolvedValue(undefined),
 		},
 		db: {
 			getHistory: vi.fn().mockResolvedValue([]),

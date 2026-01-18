@@ -87,7 +87,10 @@ export function App() {
 	const handleEnterKey = useCallback(
 		async (item: HistoryItem) => {
 			if (window.electronAPI) {
-				await window.electronAPI.clipboard.writeText(item.content);
+				await window.electronAPI.clipboard.write({
+					text: item.content,
+					rtf: item.rtf || undefined,
+				});
 			}
 			await hideWindowAndPaste();
 		},

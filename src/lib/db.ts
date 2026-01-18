@@ -8,6 +8,7 @@ export interface HistoryItem {
 	type: string;
 	created_at: string;
 	is_favorite: number;
+	rtf: string | null;
 }
 
 export interface GetHistoryOptions {
@@ -80,10 +81,10 @@ export async function toggleFavoriteResult(
  * Returns a Result for explicit error handling.
  */
 export async function addClipResult(
-	text: string,
+	data: ClipboardData,
 ): Promise<Result<void, DbError>> {
 	return withElectronAPI(
-		() => window.electronAPI.db.addClip(text),
+		() => window.electronAPI.db.addClip(data),
 		"Failed to add clip",
 	);
 }
