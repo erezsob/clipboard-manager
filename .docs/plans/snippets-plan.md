@@ -1,12 +1,13 @@
 # Phase 6: Persisted Snippets Management - Implementation Plan
 
 **Created**: 2026-01-11
+**Updated**: 2026-01-18
 **Status**: Planning
 **Estimated Effort**: Medium-Large
 
 ## Overview
 
-Add a snippets feature that allows users to save, organize, and quickly access frequently used text snippets. Unlike clipboard history (ephemeral), snippets are intentionally saved and persist indefinitely.
+Add a snippets feature that allows users to save, organize, and quickly access frequently used text and rich text snippets. Unlike clipboard history (ephemeral), snippets are intentionally saved and persist indefinitely. Supports RTF format preservation (matching history items).
 
 ## Goals
 
@@ -30,21 +31,22 @@ Add a snippets feature that allows users to save, organize, and quickly access f
 ### Phase 6.1: Database Layer
 
 **Files to modify/create:**
-- `electron/migrations/003_add_snippets.sql` (new)
+- `electron/migrations/004_add_snippets.sql` (new)
 - `electron/main.ts` (modify)
 - `electron/preload.ts` (modify)
 - `src/types/electron.d.ts` (modify)
 
 #### 6.1.1: Database Migration
 
-Create `electron/migrations/003_add_snippets.sql`:
+Create `electron/migrations/004_add_snippets.sql`:
 
 ```sql
--- Migration 003: Add snippets table
+-- Migration 004: Add snippets table
 CREATE TABLE IF NOT EXISTS snippets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   content TEXT NOT NULL,
+  rtf TEXT,  -- RTF format data (nullable, matches history table pattern)
   tags TEXT DEFAULT '',  -- Comma-separated tags
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -68,6 +70,7 @@ type SnippetRow = {
   id: number;
   name: string;
   content: string;
+  rtf: string | null;  // RTF format data
   tags: string;
   created_at: string;
   updated_at: string;
@@ -76,6 +79,7 @@ type SnippetRow = {
 type CreateSnippetInput = {
   name: string;
   content: string;
+  rtf?: string | null;  // RTF format data
   tags?: string;
 };
 
@@ -83,6 +87,7 @@ type UpdateSnippetInput = {
   id: number;
   name?: string;
   content?: string;
+  rtf?: string | null;  // RTF format data
   tags?: string;
 };
 ```
@@ -130,14 +135,14 @@ createSnippet: (
   input: CreateSnippetInput
 ) => {
   const db = dbModule.getDb();
-  const { name, content, tags = "" } = input;
+  const { name, content, rtf = null, tags = "" } = input;
   
   if (!name.trim()) throw new Error("Snippet name is required");
   if (!content.trim()) throw new Error("Snippet content is required");
   
   const result = db.prepare(
-    "INSERT INTO snippets (name, content, tags) VALUES (?, ?, ?)"
-  ).run(name.trim(), content, tags);
+    "INSERT INTO snippets (name, content, rtf, tags) VALUES (?, ?, ?, ?)"
+  ).run(name.trim(), content, rtf, tags);
   
   return result.lastInsertRowid as number;
 },
@@ -152,7 +157,7 @@ updateSnippet: (
   const db = dbModule.getDb();
   
   const setClauses: string[] = ["updated_at = datetime('now')"];
-  const params: (string | number)[] = [];
+  const params: (string | number | null)[] = [];
   
   if (updates.name !== undefined) {
     setClauses.push("name = ?");
@@ -161,6 +166,10 @@ updateSnippet: (
   if (updates.content !== undefined) {
     setClauses.push("content = ?");
     params.push(updates.content);
+  }
+  if (updates.rtf !== undefined) {
+    setClauses.push("rtf = ?");
+    params.push(updates.rtf);
   }
   if (updates.tags !== undefined) {
     setClauses.push("tags = ?");
@@ -207,6 +216,7 @@ snippets: {
         id: number;
         name: string;
         content: string;
+        rtf: string | null;
         tags: string;
         created_at: string;
         updated_at: string;
@@ -217,13 +227,14 @@ snippets: {
       id: number;
       name: string;
       content: string;
+      rtf: string | null;
       tags: string;
       created_at: string;
       updated_at: string;
     } | undefined>,
-  create: (input: { name: string; content: string; tags?: string }) =>
+  create: (input: { name: string; content: string; rtf?: string | null; tags?: string }) =>
     ipcRenderer.invoke("db:createSnippet", input) as Promise<number>,
-  update: (input: { id: number; name?: string; content?: string; tags?: string }) =>
+  update: (input: { id: number; name?: string; content?: string; rtf?: string | null; tags?: string }) =>
     ipcRenderer.invoke("db:updateSnippet", input) as Promise<void>,
   delete: (id: number) =>
     ipcRenderer.invoke("db:deleteSnippet", id) as Promise<void>,
@@ -253,6 +264,7 @@ export interface Snippet {
   id: number;
   name: string;
   content: string;
+  rtf: string | null;  // RTF format data
   tags: string;
   created_at: string;
   updated_at: string;
@@ -267,6 +279,7 @@ export interface GetSnippetsOptions {
 export interface CreateSnippetInput {
   name: string;
   content: string;
+  rtf?: string | null;  // RTF format data
   tags?: string;
 }
 
@@ -274,6 +287,7 @@ export interface UpdateSnippetInput {
   id: number;
   name?: string;
   content?: string;
+  rtf?: string | null;  // RTF format data
   tags?: string;
 }
 
@@ -501,8 +515,9 @@ Create `src/components/snippets/SnippetItem.tsx`:
 
 Similar to `HistoryItem.tsx` but with:
 - Name display (primary)
-- Content preview (truncated)
+- Content preview (truncated plain text)
 - Tags display (as pills/badges)
+- Optional RTF indicator (icon when `rtf` is present)
 - Edit, Copy, Delete actions
 
 #### 6.3.3: Snippet List Component
@@ -517,10 +532,15 @@ Create `src/components/snippets/SnippetEditor.tsx`:
 
 Modal or slide-in panel with:
 - Name input field
-- Content textarea (larger area for editing)
+- Content textarea (larger area for editing plain text)
 - Tag input component
 - Save/Cancel buttons
 - Used for both Create and Edit operations
+
+**RTF Note**: Editor shows plain text content. RTF is stored transparently:
+- When saving from history: RTF preserved from original item
+- When manually creating: RTF remains null (plain text only)
+- When editing existing: RTF retained unless content is modified (clears RTF)
 
 #### 6.3.5: Tag Input Component
 
@@ -547,6 +567,21 @@ Add a new action button (bookmark icon from lucide-react):
 >
   <Bookmark className="w-4 h-4" />
 </button>
+```
+
+**RTF Handling**: The `onSaveAsSnippet` callback receives the full `HistoryItem` including `rtf` field. When creating snippet, pass both `content` and `rtf`:
+
+```typescript
+// In App.tsx or useSnippetActions
+const handleSaveAsSnippet = (item: HistoryItem) => {
+  setEditingSnippet({
+    name: "", // User enters name
+    content: item.content,
+    rtf: item.rtf,  // Preserve RTF from history item
+    tags: "",
+  });
+  setIsSnippetEditorOpen(true);
+};
 ```
 
 ---
@@ -626,7 +661,11 @@ export function useSnippetActions({
   const deleteMutation = useDeleteSnippetMutation();
 
   const handleCopySnippet = async (snippet: Snippet) => {
-    await window.electronAPI.clipboard.writeText(snippet.content);
+    // Write both text and RTF if available (matches history item behavior)
+    await window.electronAPI.clipboard.write({
+      text: snippet.content,
+      rtf: snippet.rtf ?? undefined,
+    });
     await onHideWindow();
   };
 
@@ -683,7 +722,7 @@ Test SnippetItem, SnippetList, and SnippetEditor components.
 
 | File                                        | Purpose                      |
 | ------------------------------------------- | ---------------------------- |
-| `electron/migrations/003_add_snippets.sql`  | Database schema for snippets |
+| `electron/migrations/004_add_snippets.sql`  | Database schema for snippets |
 | `src/components/common/ViewToggle.tsx`      | History/Snippets tab toggle  |
 | `src/components/snippets/SnippetItem.tsx`   | Individual snippet display   |
 | `src/components/snippets/SnippetList.tsx`   | Snippet list container       |
@@ -757,8 +796,9 @@ Recommended sequence for implementation:
 - [ ] Can search snippets by name, content, or tags
 - [ ] Can edit existing snippets
 - [ ] Can delete snippets
-- [ ] Can copy snippet content to clipboard
-- [ ] Can save history item as snippet
+- [ ] Can copy snippet content to clipboard (with RTF if available)
+- [ ] Can save history item as snippet (preserves RTF)
+- [ ] RTF formatting restored when pasting snippet
 - [ ] Can toggle between History and Snippets views
 - [ ] Keyboard navigation works in Snippets view
 - [ ] All existing history functionality still works
@@ -776,4 +816,4 @@ Recommended sequence for implementation:
 - Snippet keyboard shortcuts (quick paste)
 - Snippet usage statistics
 - Syntax highlighting for code snippets
-- Rich text snippets
+- RTF editor (currently RTF stored/restored but not editable)
