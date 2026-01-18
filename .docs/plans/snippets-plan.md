@@ -11,15 +11,13 @@ Add a snippets feature that allows users to save, organize, and quickly access f
 
 ## Goals
 
-- Allow users to save clipboard items as named snippets
-- Support tags for organization and filtering
-- Provide search functionality across snippet names, content, and tags
+- Allow users to save clipboard items as snippets (with optional name)
+- Provide search functionality across snippet names and content
 - Enable CRUD operations (create, read, update, delete)
 - Integrate seamlessly with existing History view via tab navigation
 
 ## Non-Goals (Out of Scope)
 
-- Snippet categories/folders (can be achieved with tags)
 - Snippet import/export (future enhancement)
 - Snippet sharing (future enhancement)
 - Syntax highlighting (future enhancement)
@@ -44,10 +42,9 @@ Create `electron/migrations/004_add_snippets.sql`:
 -- Migration 004: Add snippets table
 CREATE TABLE IF NOT EXISTS snippets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
+  name TEXT,  -- Optional display name
   content TEXT NOT NULL,
   rtf TEXT,  -- RTF format data (nullable, matches history table pattern)
-  tags TEXT DEFAULT '',  -- Comma-separated tags
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -68,27 +65,24 @@ Add to `electron/main.ts`:
 ```typescript
 type SnippetRow = {
   id: number;
-  name: string;
+  name: string | null;  // Optional display name
   content: string;
   rtf: string | null;  // RTF format data
-  tags: string;
   created_at: string;
   updated_at: string;
 };
 
 type CreateSnippetInput = {
-  name: string;
+  name?: string;  // Optional display name
   content: string;
   rtf?: string | null;  // RTF format data
-  tags?: string;
 };
 
 type UpdateSnippetInput = {
   id: number;
-  name?: string;
+  name?: string | null;  // Can set to null to clear
   content?: string;
   rtf?: string | null;  // RTF format data
-  tags?: string;
 };
 ```
 
@@ -110,9 +104,9 @@ getSnippets: (
   const params: (string | number)[] = [];
   
   if (query.trim()) {
-    sql += " WHERE name LIKE ? OR content LIKE ? OR tags LIKE ?";
+    sql += " WHERE name LIKE ? OR content LIKE ?";
     const searchTerm = `%${query}%`;
-    params.push(searchTerm, searchTerm, searchTerm);
+    params.push(searchTerm, searchTerm);
   }
   
   sql += " ORDER BY updated_at DESC LIMIT ? OFFSET ?";
@@ -135,14 +129,13 @@ createSnippet: (
   input: CreateSnippetInput
 ) => {
   const db = dbModule.getDb();
-  const { name, content, rtf = null, tags = "" } = input;
+  const { name, content, rtf = null } = input;
   
-  if (!name.trim()) throw new Error("Snippet name is required");
   if (!content.trim()) throw new Error("Snippet content is required");
   
   const result = db.prepare(
-    "INSERT INTO snippets (name, content, rtf, tags) VALUES (?, ?, ?, ?)"
-  ).run(name.trim(), content, rtf, tags);
+    "INSERT INTO snippets (name, content, rtf) VALUES (?, ?, ?)"
+  ).run(name?.trim() || null, content, rtf);
   
   return result.lastInsertRowid as number;
 },
@@ -161,7 +154,7 @@ updateSnippet: (
   
   if (updates.name !== undefined) {
     setClauses.push("name = ?");
-    params.push(updates.name.trim());
+    params.push(updates.name?.trim() || null);
   }
   if (updates.content !== undefined) {
     setClauses.push("content = ?");
@@ -170,10 +163,6 @@ updateSnippet: (
   if (updates.rtf !== undefined) {
     setClauses.push("rtf = ?");
     params.push(updates.rtf);
-  }
-  if (updates.tags !== undefined) {
-    setClauses.push("tags = ?");
-    params.push(updates.tags);
   }
   
   params.push(id);
@@ -214,10 +203,9 @@ snippets: {
     ipcRenderer.invoke("db:getSnippets", options ?? {}) as Promise<
       Array<{
         id: number;
-        name: string;
+        name: string | null;
         content: string;
         rtf: string | null;
-        tags: string;
         created_at: string;
         updated_at: string;
       }>
@@ -225,16 +213,15 @@ snippets: {
   getById: (id: number) =>
     ipcRenderer.invoke("db:getSnippetById", id) as Promise<{
       id: number;
-      name: string;
+      name: string | null;
       content: string;
       rtf: string | null;
-      tags: string;
       created_at: string;
       updated_at: string;
     } | undefined>,
-  create: (input: { name: string; content: string; rtf?: string | null; tags?: string }) =>
+  create: (input: { name?: string; content: string; rtf?: string | null }) =>
     ipcRenderer.invoke("db:createSnippet", input) as Promise<number>,
-  update: (input: { id: number; name?: string; content?: string; rtf?: string | null; tags?: string }) =>
+  update: (input: { id: number; name?: string | null; content?: string; rtf?: string | null }) =>
     ipcRenderer.invoke("db:updateSnippet", input) as Promise<void>,
   delete: (id: number) =>
     ipcRenderer.invoke("db:deleteSnippet", id) as Promise<void>,
@@ -262,10 +249,9 @@ Add to `src/lib/db.ts`:
 ```typescript
 export interface Snippet {
   id: number;
-  name: string;
+  name: string | null;  // Optional display name
   content: string;
   rtf: string | null;  // RTF format data
-  tags: string;
   created_at: string;
   updated_at: string;
 }
@@ -277,18 +263,16 @@ export interface GetSnippetsOptions {
 }
 
 export interface CreateSnippetInput {
-  name: string;
+  name?: string;  // Optional display name
   content: string;
   rtf?: string | null;  // RTF format data
-  tags?: string;
 }
 
 export interface UpdateSnippetInput {
   id: number;
-  name?: string;
+  name?: string | null;  // Can set to null to clear
   content?: string;
   rtf?: string | null;  // RTF format data
-  tags?: string;
 }
 
 // Result-returning functions
@@ -462,7 +446,6 @@ export function useDeleteSnippetMutation() {
 - `src/components/snippets/SnippetItem.tsx` (new)
 - `src/components/snippets/SnippetList.tsx` (new)
 - `src/components/snippets/SnippetEditor.tsx` (new)
-- `src/components/snippets/TagInput.tsx` (new)
 - `src/components/snippets/index.ts` (new)
 
 **Files to modify:**
@@ -514,9 +497,8 @@ export function ViewToggle({ activeView, onViewChange }: ViewToggleProps) {
 Create `src/components/snippets/SnippetItem.tsx`:
 
 Similar to `HistoryItem.tsx` but with:
-- Name display (primary)
+- Name display if present, otherwise content preview as primary
 - Content preview (truncated plain text)
-- Tags display (as pills/badges)
 - Optional RTF indicator (icon when `rtf` is present)
 - Edit, Copy, Delete actions
 
@@ -531,9 +513,8 @@ Similar to `HistoryList.tsx` but renders `SnippetItem` components.
 Create `src/components/snippets/SnippetEditor.tsx`:
 
 Modal or slide-in panel with:
-- Name input field
+- Name input field (optional)
 - Content textarea (larger area for editing plain text)
-- Tag input component
 - Save/Cancel buttons
 - Used for both Create and Edit operations
 
@@ -542,16 +523,7 @@ Modal or slide-in panel with:
 - When manually creating: RTF remains null (plain text only)
 - When editing existing: RTF retained unless content is modified (clears RTF)
 
-#### 6.3.5: Tag Input Component
-
-Create `src/components/snippets/TagInput.tsx`:
-
-- Display existing tags as removable pills
-- Text input to add new tags
-- Comma or Enter to add tag
-- Click X to remove tag
-
-#### 6.3.6: Add "Save as Snippet" to History Item
+#### 6.3.5: Add "Save as Snippet" to History Item
 
 Modify `src/components/history/HistoryItem.tsx`:
 
@@ -575,10 +547,8 @@ Add a new action button (bookmark icon from lucide-react):
 // In App.tsx or useSnippetActions
 const handleSaveAsSnippet = (item: HistoryItem) => {
   setEditingSnippet({
-    name: "", // User enters name
     content: item.content,
     rtf: item.rtf,  // Preserve RTF from history item
-    tags: "",
   });
   setIsSnippetEditorOpen(true);
 };
@@ -727,7 +697,6 @@ Test SnippetItem, SnippetList, and SnippetEditor components.
 | `src/components/snippets/SnippetItem.tsx`   | Individual snippet display   |
 | `src/components/snippets/SnippetList.tsx`   | Snippet list container       |
 | `src/components/snippets/SnippetEditor.tsx` | Create/Edit snippet modal    |
-| `src/components/snippets/TagInput.tsx`      | Tag management component     |
 | `src/components/snippets/index.ts`          | Barrel export                |
 | `src/hooks/queries/useSnippetsQuery.ts`     | Snippet data fetching        |
 | `src/hooks/mutations/snippets.ts`           | Snippet CRUD mutations       |
@@ -778,7 +747,6 @@ Recommended sequence for implementation:
    - Keyboard navigation for snippets
 
 5. **Snippet Editor** (Phase 6.3 continued)
-   - TagInput
    - SnippetEditor modal
    - Save as Snippet from History
 
@@ -791,9 +759,9 @@ Recommended sequence for implementation:
 
 ## Acceptance Criteria
 
-- [ ] Can create new snippets with name, content, and optional tags
+- [ ] Can create new snippets with content (name optional)
 - [ ] Can view list of all snippets
-- [ ] Can search snippets by name, content, or tags
+- [ ] Can search snippets by name or content
 - [ ] Can edit existing snippets
 - [ ] Can delete snippets
 - [ ] Can copy snippet content to clipboard (with RTF if available)
@@ -810,6 +778,7 @@ Recommended sequence for implementation:
 
 ## Future Enhancements (Not in Scope)
 
+- Tags support (organize snippets with searchable tags)
 - Snippet folders/categories
 - Snippet templates with placeholders
 - Import/export snippets (JSON)
