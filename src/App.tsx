@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBanner, Footer, SearchBar } from "./components/common";
 import { HistoryList } from "./components/history";
 import { useClipboardMonitor } from "./hooks/queries";
@@ -146,10 +146,7 @@ export function App() {
 	}, [refetchHistory, setSelectedIndex]);
 
 	// Reset selected index when search or filter changes
-	const searchFilterKey = useMemo(
-		() => `${searchQuery}-${favoritesOnly}`,
-		[searchQuery, favoritesOnly],
-	);
+	const searchFilterKey = `${searchQuery}-${favoritesOnly}`;
 	// biome-ignore lint/correctness/useExhaustiveDependencies: searchFilterKey is intentionally used to trigger reset when search/filter changes
 	useEffect(() => {
 		setSelectedIndex(0);
