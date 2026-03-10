@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { type ComponentProps, type RefObject, createRef } from "react";
+import { type ComponentProps, createRef, type RefObject } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockHistoryItems } from "../../test/mocks/history";
 import { HistoryList } from "./HistoryList";
