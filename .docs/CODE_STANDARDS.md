@@ -35,7 +35,6 @@
 - README updates for significant changes
 
 ## 6. Performance
-- Memoization where appropriate (useCallback, useMemo)
 - Avoid unnecessary re-renders
 - Efficient data structures and algorithms
 - Lazy loading for large datasets
