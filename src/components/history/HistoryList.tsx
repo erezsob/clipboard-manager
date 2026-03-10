@@ -1,4 +1,5 @@
-import type { RefObject } from "react";
+import { type RefObject, useCallback, useState } from "react";
+import { SCROLL_TO_TOP_THRESHOLD } from "../../lib/constants";
 import type { HistoryItem as HistoryItemType } from "../../lib/db";
 import { HistoryItem } from "./HistoryItem";
 
@@ -25,6 +26,8 @@ interface HistoryListProps {
 	onDelete: (e: React.MouseEvent, itemId: number) => void;
 	/** Callback to load more items */
 	onLoadMore: () => void;
+	/** Callback when jump-to-top is triggered */
+	onJumpToTop?: () => void;
 }
 
 /**
@@ -43,7 +46,18 @@ export function HistoryList({
 	onToggleFavorite,
 	onDelete,
 	onLoadMore,
+	onJumpToTop,
 }: HistoryListProps) {
+	const [showJumpToTop, setShowJumpToTop] = useState(false);
+
+	const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+		setShowJumpToTop(e.currentTarget.scrollTop > SCROLL_TO_TOP_THRESHOLD);
+	}, []);
+
+	const handleJumpToTop = useCallback(() => {
+		containerRef?.current?.scrollTo({ top: 0, behavior: "smooth" });
+		onJumpToTop?.();
+	}, [containerRef, onJumpToTop]);
 	if (items.length === 0) {
 		return (
 			<div ref={containerRef} className="flex-1 overflow-y-auto px-3 py-2">
@@ -60,7 +74,8 @@ export function HistoryList({
 	return (
 		<div
 			ref={containerRef}
-			className="flex-1 overflow-y-auto px-3 py-2 space-y-1"
+			className="relative flex-1 overflow-y-auto px-3 py-2 space-y-1"
+			onScroll={handleScroll}
 		>
 			{items.map((item, index) => (
 				<div
@@ -97,6 +112,16 @@ export function HistoryList({
 						{isLoadingMore ? "Loading..." : "Load More"}
 					</button>
 				</div>
+			)}
+			{showJumpToTop && (
+				<button
+					type="button"
+					aria-label="Jump to top"
+					onClick={handleJumpToTop}
+					className="sticky cursor-pointer bottom-2 left-full ml-auto w-8 h-8 flex items-center justify-center rounded-lg bg-gray-700/80 text-gray-300 hover:bg-gray-600 hover:text-white transition-colors shadow-lg"
+				>
+					↑
+				</button>
 			)}
 		</div>
 	);

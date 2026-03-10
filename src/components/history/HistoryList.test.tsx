@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ComponentProps, RefObject } from "react";
+import { type ComponentProps, createRef, type RefObject } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockHistoryItems } from "../../test/mocks/history";
 import { HistoryList } from "./HistoryList";
@@ -16,6 +16,7 @@ describe("HistoryList", () => {
 		onToggleFavorite: vi.fn(),
 		onDelete: vi.fn(),
 		onLoadMore: vi.fn(),
+		onJumpToTop: vi.fn(),
 	} as const;
 
 	const defaultProps = {
@@ -155,5 +156,70 @@ describe("HistoryList", () => {
 		expect(refs[0]).toBeInstanceOf(HTMLDivElement);
 		expect(refs[1]).toBeInstanceOf(HTMLDivElement);
 		expect(refs[2]).toBeInstanceOf(HTMLDivElement);
+	});
+
+	describe("jump to top button", () => {
+		function renderWithContainerRef() {
+			const containerRef = createRef<HTMLDivElement>();
+			render(<HistoryList {...defaultProps} containerRef={containerRef} />);
+			const container = containerRef.current;
+			if (!container) throw new Error("Container ref not set");
+			return container;
+		}
+
+		it("is not visible when list is not scrolled", () => {
+			render(<HistoryList {...defaultProps} />);
+
+			expect(
+				screen.queryByRole("button", { name: "Jump to top" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("appears after scrolling past threshold", () => {
+			const container = renderWithContainerRef();
+
+			fireEvent.scroll(container, {
+				target: { scrollTop: 250 },
+			});
+
+			expect(
+				screen.getByRole("button", { name: "Jump to top" }),
+			).toBeInTheDocument();
+		});
+
+		it("hides when scrolled back above threshold", () => {
+			const container = renderWithContainerRef();
+
+			fireEvent.scroll(container, {
+				target: { scrollTop: 250 },
+			});
+			expect(
+				screen.getByRole("button", { name: "Jump to top" }),
+			).toBeInTheDocument();
+
+			fireEvent.scroll(container, {
+				target: { scrollTop: 50 },
+			});
+			expect(
+				screen.queryByRole("button", { name: "Jump to top" }),
+			).not.toBeInTheDocument();
+		});
+
+		it("calls onJumpToTop and scrolls container when clicked", () => {
+			const container = renderWithContainerRef();
+			container.scrollTo = vi.fn();
+
+			fireEvent.scroll(container, {
+				target: { scrollTop: 250 },
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Jump to top" }));
+
+			expect(mockHandlers.onJumpToTop).toHaveBeenCalled();
+			expect(container.scrollTo).toHaveBeenCalledWith({
+				top: 0,
+				behavior: "smooth",
+			});
+		});
 	});
 });

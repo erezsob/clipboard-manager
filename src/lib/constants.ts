@@ -27,3 +27,6 @@ export const QUERY_STALE_TIME = 30_000;
 
 /** Time before inactive query data is garbage collected (ms) */
 export const QUERY_GC_TIME = 300_000;
+
+/** Scroll distance (px) before showing the jump-to-top button */
+export const SCROLL_TO_TOP_THRESHOLD = 200;

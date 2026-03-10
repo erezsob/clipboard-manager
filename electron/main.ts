@@ -90,7 +90,7 @@ const MAX_CLIP_CHARS = 1_000_000;
  * Delay in milliseconds before simulating paste after hiding window.
  * Allows time for focus to transfer to the previous application.
  */
-const PASTE_DELAY_MS = 100;
+const PASTE_DELAY_MS = 10;
 
 /**
  * Validates that an id is a positive integer.
