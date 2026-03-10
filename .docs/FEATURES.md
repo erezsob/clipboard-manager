@@ -117,7 +117,8 @@
 - Click settings cog → Open dropdown menu
 - Click "Clear All" in menu → Show confirmation, then clear all history
 - Click "Quit" in menu → Close application
-- Keyboard shortcuts remain (Arrow keys, Enter, Escape)
+- Click "Jump to top" button → Scroll list to top, select first item
+- Keyboard shortcuts: Arrow keys, Enter, Escape
 
 ## Implementation Details
 

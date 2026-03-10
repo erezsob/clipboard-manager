@@ -114,6 +114,10 @@ export function App() {
 		onScrollToIndex: handleScrollToIndex,
 	});
 
+	const handleJumpToTop = useCallback(() => {
+		setSelectedIndex(0);
+	}, [setSelectedIndex]);
+
 	// History actions hook manages item operations (copy, delete, favorite, clear)
 	const {
 		error: actionError,
@@ -231,6 +235,7 @@ export function App() {
 				onToggleFavorite={handleToggleFavorite}
 				onDelete={handleDeleteItem}
 				onLoadMore={handleLoadMore}
+				onJumpToTop={handleJumpToTop}
 			/>
 
 			{/* Footer with hint and settings */}

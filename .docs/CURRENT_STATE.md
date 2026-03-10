@@ -10,6 +10,7 @@
 - Window toggle via `Cmd+Shift+V` keyboard shortcut
 - Search functionality
 - Keyboard navigation (Arrow keys, Enter, Escape)
+- Jump to top button (floating, appears on scroll)
 - Dark mode UI
 - Window starts hidden
 - Pre-push git hook (linting, formatting, types, knip checks)
