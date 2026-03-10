@@ -65,8 +65,7 @@ export function useKeyboardNavigation({
 			// Arrow Up: Navigate up
 			if (e.key === "ArrowUp") {
 				e.preventDefault();
-				const newIndex =
-					selectedIndex > 0 ? selectedIndex - 1 : filteredHistory.length - 1;
+				const newIndex = selectedIndex > 0 ? selectedIndex - 1 : 0;
 				updateSelectedIndex(newIndex);
 				onScrollToIndex?.(newIndex);
 				return;
@@ -76,7 +75,9 @@ export function useKeyboardNavigation({
 			if (e.key === "ArrowDown") {
 				e.preventDefault();
 				const newIndex =
-					selectedIndex < filteredHistory.length - 1 ? selectedIndex + 1 : 0;
+					selectedIndex < filteredHistory.length - 1
+						? selectedIndex + 1
+						: filteredHistory.length - 1;
 				updateSelectedIndex(newIndex);
 				onScrollToIndex?.(newIndex);
 				return;
