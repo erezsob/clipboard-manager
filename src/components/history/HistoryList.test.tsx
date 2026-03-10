@@ -161,9 +161,7 @@ describe("HistoryList", () => {
 	describe("jump to top button", () => {
 		function renderWithContainerRef() {
 			const containerRef = createRef<HTMLDivElement>();
-			render(
-				<HistoryList {...defaultProps} containerRef={containerRef} />,
-			);
+			render(<HistoryList {...defaultProps} containerRef={containerRef} />);
 			const container = containerRef.current;
 			if (!container) throw new Error("Container ref not set");
 			return container;
@@ -215,9 +213,7 @@ describe("HistoryList", () => {
 				target: { scrollTop: 250 },
 			});
 
-			fireEvent.click(
-				screen.getByRole("button", { name: "Jump to top" }),
-			);
+			fireEvent.click(screen.getByRole("button", { name: "Jump to top" }));
 
 			expect(mockHandlers.onJumpToTop).toHaveBeenCalled();
 			expect(container.scrollTo).toHaveBeenCalledWith({

@@ -2,18 +2,18 @@
 
 /* High-contrast scrollbar for dark background */
 ::-webkit-scrollbar {
-  width: 8px;
+	width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #9ca3af;
-  border-radius: 4px;
+	background: #9ca3af;
+	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d1d5db;
+	background: #d1d5db;
 }
