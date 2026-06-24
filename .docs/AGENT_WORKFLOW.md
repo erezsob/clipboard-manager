@@ -8,293 +8,267 @@ The project uses a modular documentation structure in `.docs/` to optimize AI ag
 
 ---
 
-## 🚀 Quick Reference: Continue to Next Phase
+## Quick Reference: Start New Work
 
-**Copy-paste this template to continue development:**
+**Copy-paste this template:**
 
 ```
-I want to work on [Phase X: Name]. 
+I want to work on [capability name — e.g. snippets, E2E testing, release workflow].
 
 Please:
-1. Review @.docs/CURRENT_STATE.md to understand current status
-2. Check @.docs/FEATURES.md for [Phase X] requirements
-3. Review @.docs/CODE_STANDARDS.md for quality requirements
-4. Check @.docs/ARCHITECTURE.md for system patterns
-5. Review relevant existing code files
+1. Review @.docs/CURRENT_STATE.md (At a Glance + What's Next)
+2. Check @.docs/FEATURES.md for requirements
+3. Review the relevant plan in @.docs/plans/ if one exists
+4. Review @.docs/CODE_STANDARDS.md for quality requirements
+5. Check @.docs/ARCHITECTURE.md for system patterns
+6. Review relevant existing code files
 
-Then create a plan for implementing [specific task from phase].
+Then create a plan for implementing [specific task].
 ```
 
 **Even quicker:**
+
 ```
-@.docs/CURRENT_STATE.md @.docs/FEATURES.md - Continue with the next phase of development
+@.docs/CURRENT_STATE.md @.docs/FEATURES.md — I want to work on the next item in What's Next
 ```
 
 **Key reminders:**
+
 - Always reference specific docs (don't assume agent has context)
 - Priority order: `CURRENT_STATE` → `FEATURES` → `CODE_STANDARDS` → `ARCHITECTURE`
-- Reference existing code patterns: "Follow the pattern in `src/hooks/useClipboard.ts`"
-- At the end: "Please update `.docs/CURRENT_STATE.md` to mark this complete"
+- Reference existing code patterns: "Follow the pattern in `src/hooks/queries/useHistoryQuery.ts`"
+- At the end: "Please update `.docs/CURRENT_STATE.md` to reflect the change"
 
 ---
 
-## Quick Start: Starting a New Phase
+## Quick Start
 
-### Step 1: Identify the Next Phase
+### Step 1: Identify What to Work On
 
-Check `.docs/CURRENT_STATE.md` to see what phases are completed and what's next:
-- Phase 4: Polish & Settings (partial)
-- Phase 4.5: Code Refactoring & Component Extraction (recommended next)
-- Phase 5: TanStack Query Integration
-- Phase 7: Automated Testing Suite (High Priority)
+Check `.docs/CURRENT_STATE.md`:
+
+- **At a Glance** — scan capability status in one table
+- **What's Next** — ordered backlog of remaining work
+- **In Progress** — anything already started
+
+Current backlog (as of last update): E2E testing → release workflow → snippets.
 
 ### Step 2: Initiate Work with the AI Agent
 
-Use one of these approaches to ensure the agent has proper context:
+#### Option A: Reference specific documentation
 
-#### Option A: Reference Specific Documentation Files
 ```
-I want to work on Phase 4.5: Code Refactoring & Component Extraction. 
-Please review @.docs/CURRENT_STATE.md and @.docs/FEATURES.md to understand 
-the requirements, then check @.docs/CODE_STANDARDS.md for quality standards.
-Let's start by extracting the useWindowVisibility hook from App.tsx.
+I want to work on E2E testing with Playwright.
+Please review @.docs/CURRENT_STATE.md and @.docs/plans/e2e-testing-plan.md,
+then check @.docs/CODE_STANDARDS.md for quality standards.
 ```
 
-#### Option B: Use the Documentation Index
+#### Option B: Use the documentation index
+
 ```
-I want to start Phase 4.5. Please read @.docs/README.md to understand 
-the documentation structure, then review the relevant sections for 
-code refactoring requirements.
+I want to implement snippets. Please read @.docs/README.md,
+then @.docs/CURRENT_STATE.md and @.docs/plans/snippets-plan.md.
 ```
 
-#### Option C: Direct File References
+#### Option C: Direct file references
+
 ```
-Let's work on Phase 4.5. I need you to:
-1. Check @.docs/CURRENT_STATE.md for what's already done
-2. Review @.docs/FEATURES.md section on Code Refactoring
+Let's work on the release workflow. I need you to:
+1. Check @.docs/CURRENT_STATE.md for current CI status
+2. Review @.docs/WORKFLOW.md for the development process
 3. Follow @.docs/CODE_STANDARDS.md for all changes
-4. Reference @.docs/ARCHITECTURE.md for system patterns
 ```
 
 ### Step 3: Ensure Context is Loaded
 
 The agent should reference these files in priority order:
 
-1. **`.docs/CURRENT_STATE.md`** - Understand what already exists
-2. **`.docs/FEATURES.md`** - Get feature specifications and requirements
-3. **`.docs/CODE_STANDARDS.md`** - Follow quality requirements
-4. **`.docs/ARCHITECTURE.md`** - Understand system patterns
-5. **Relevant source files** - See actual implementation (e.g., `src/App.tsx`)
+1. **`.docs/CURRENT_STATE.md`** — what exists, what's next
+2. **`.docs/FEATURES.md`** — feature specifications
+3. **`.docs/plans/*.md`** — implementation task breakdown (when applicable)
+4. **`.docs/CODE_STANDARDS.md`** — quality requirements
+5. **`.docs/ARCHITECTURE.md`** — system patterns
+6. **Relevant source files** — actual implementation
 
 ## Example Conversation Flow
 
-### Starting a Phase
+### Starting work
+
 ```
-You: I want to work on Phase 4.5: Code Refactoring. Please review 
-     @.docs/CURRENT_STATE.md to see what needs to be done, then check 
-     @.docs/FEATURES.md for the detailed requirements.
+You: I want to work on snippets. Please review @.docs/CURRENT_STATE.md
+     and @.docs/plans/snippets-plan.md for requirements.
 
 Agent: [Reads the docs, understands requirements]
 
-You: Let's start by extracting the useWindowVisibility hook. Check 
-     @src/App.tsx to see the current implementation and follow the 
-     patterns in @src/hooks/useClipboard.ts.
-
-Agent: [Reviews code, creates hook following patterns]
-
-You: Good! Now let's extract the ErrorBanner component. Make sure it 
-     follows @.docs/CODE_STANDARDS.md and matches the existing UI patterns.
+You: Let's start with the database layer. Check @.docs/DATABASE.md
+     and follow migration patterns in electron/migrations/.
 ```
 
-### During Implementation
+### During implementation
+
 ```
-You: The hook looks good, but please verify it follows all the standards 
-     in @.docs/CODE_STANDARDS.md, especially the documentation requirements.
+You: Please verify this follows @.docs/CODE_STANDARDS.md,
+     especially the documentation requirements.
 
 Agent: [Checks standards, adds JSDoc comments]
-
-You: Perfect! Now let's test it. Check @.docs/ARCHITECTURE.md to understand 
-     how this integrates with the Electron window management.
 ```
 
-### Completing Work
+### Completing work
+
 ```
-You: Great work! Now please update @.docs/CURRENT_STATE.md to mark 
-     the useWindowVisibility hook extraction as complete, and update 
-     the "Last Updated" date.
+You: Great work! Please update @.docs/CURRENT_STATE.md:
+     - Update the At a Glance table row for [capability]
+     - Remove or update What's Next if done
+     - Update the "Last Updated" date
 ```
 
 ## Best Practices
 
-### ✅ Do
+### Do
 
-1. **Reference Specific Docs**: Always use `@.docs/FEATURES.md` or `@.docs/CURRENT_STATE.md` instead of assuming the agent knows
-2. **Be Specific**: "Extract the useWindowVisibility hook as described in Phase 4.5"
-3. **Reference Existing Patterns**: "Follow the pattern in `src/hooks/useClipboard.ts`"
-4. **Request Doc Updates**: "After completing this, update `.docs/CURRENT_STATE.md`"
-5. **Check Standards**: Remind the agent to verify against `@.docs/CODE_STANDARDS.md`
-6. **Verify Architecture**: Reference `@.docs/ARCHITECTURE.md` for system patterns
+1. **Reference specific docs** — use `@.docs/CURRENT_STATE.md` instead of assuming context
+2. **Be specific** — "Implement the snippets database migration per snippets-plan.md"
+3. **Reference existing patterns** — "Follow the pattern in `src/hooks/queries/useHistoryMutations.ts`"
+4. **Request doc updates** — "After completing this, update `.docs/CURRENT_STATE.md`"
+5. **Check standards** — remind the agent to verify against `@.docs/CODE_STANDARDS.md`
 
-### ❌ Don't
+### Don't
 
-1. **Assume Context**: Don't assume the agent has read everything - always reference specific files
-2. **Skip Context**: Don't skip mentioning which phase/feature you're working on
-3. **Forget Standards**: Don't forget to remind checking `@.docs/CODE_STANDARDS.md`
-4. **Ignore Patterns**: Don't skip referencing existing code patterns
-5. **Skip Documentation Updates**: Don't forget to update `.docs/CURRENT_STATE.md` when work is complete
+1. **Assume context** — always reference specific files
+2. **Skip the capability name** — say what you're working on
+3. **Forget standards** — remind checking `@.docs/CODE_STANDARDS.md`
+4. **Skip documentation updates** — keep `.docs/CURRENT_STATE.md` current
 
-## Template for Starting a New Phase
-
-Use this template when beginning work on a new phase:
+## Template for Starting New Work
 
 ```
-I want to work on [Phase X: Name]. 
+I want to work on [capability name].
 
 Please:
-1. Review @.docs/CURRENT_STATE.md to understand current status
-2. Check @.docs/FEATURES.md for [Phase X] requirements
-3. Review @.docs/CODE_STANDARDS.md for quality requirements
-4. Check @.docs/ARCHITECTURE.md for system patterns
-5. Review relevant existing code files
+1. Review @.docs/CURRENT_STATE.md (At a Glance + What's Next)
+2. Check @.docs/FEATURES.md for [capability] requirements
+3. Review @.docs/plans/[plan].md if applicable
+4. Review @.docs/CODE_STANDARDS.md for quality requirements
+5. Check @.docs/ARCHITECTURE.md for system patterns
+6. Review relevant existing code files
 
-Then create a plan for implementing [specific task from phase].
+Then create a plan for implementing [specific task].
 ```
 
 ## Cursor IDE Quick Reference
 
-### File References
-- `@.docs/` - References entire docs directory
-- `@.docs/CURRENT_STATE.md` - Current implementation status
-- `@.docs/FEATURES.md` - Feature specifications
-- `@.docs/CODE_STANDARDS.md` - Quality requirements
-- `@.docs/ARCHITECTURE.md` - System design
-- `@.docs/DATABASE.md` - Database schema and migrations
-- `@.docs/WORKFLOW.md` - Development process
-- `@.cursorrules` - Cursor-specific rules
+### File references
 
-### Common Commands
+- `@.docs/` — entire docs directory
+- `@.docs/CURRENT_STATE.md` — implementation status snapshot
+- `@.docs/FEATURES.md` — feature specifications
+- `@.docs/plans/` — implementation plans for in-flight work
+- `@.docs/CODE_STANDARDS.md` — quality requirements
+- `@.docs/ARCHITECTURE.md` — system design
+- `@.docs/DATABASE.md` — database schema and migrations
+- `@.docs/WORKFLOW.md` — development process
+- `@.cursorrules` — Cursor-specific rules
+
+### Common commands
 
 **Starting a new feature:**
+
 ```
-@.docs/CURRENT_STATE.md @.docs/FEATURES.md - I want to implement [feature name]
+@.docs/CURRENT_STATE.md @.docs/FEATURES.md — I want to implement [feature name]
 ```
 
 **Checking code quality:**
-```
-@.docs/CODE_STANDARDS.md - Please verify this code follows all standards
-```
 
-**Understanding architecture:**
 ```
-@.docs/ARCHITECTURE.md - How does [component] fit into the system?
+@.docs/CODE_STANDARDS.md — Please verify this code follows all standards
 ```
 
 **Updating documentation:**
+
 ```
 After completing [task], please update @.docs/CURRENT_STATE.md
 ```
 
 ## Workflow Checklist
 
-When starting work on a new phase or feature:
+When starting work on a feature:
 
-- [ ] Identify the phase/feature from `.docs/CURRENT_STATE.md`
-- [ ] Reference `.docs/FEATURES.md` for detailed requirements
-- [ ] Review `.docs/CODE_STANDARDS.md` for quality requirements
-- [ ] Check `.docs/ARCHITECTURE.md` for system patterns
+- [ ] Check **At a Glance** and **What's Next** in `.docs/CURRENT_STATE.md`
+- [ ] Reference `.docs/FEATURES.md` for requirements
+- [ ] Check `.docs/plans/` for an implementation plan
+- [ ] Review `.docs/CODE_STANDARDS.md`
+- [ ] Check `.docs/ARCHITECTURE.md` for integration points
 - [ ] Review existing code patterns in similar files
-- [ ] Request the agent create an implementation plan
-- [ ] Verify implementation follows all standards
+- [ ] Request an implementation plan from the agent
 - [ ] Update `.docs/CURRENT_STATE.md` when work is complete
 
-## Phase-Specific Workflows
+## Capability-Specific Workflows
 
-### Code Refactoring (Phase 4.5)
-```
-1. Reference @.docs/FEATURES.md for extraction requirements
-2. Review existing hooks in @src/hooks/ for patterns
-3. Check @.docs/CODE_STANDARDS.md for component/hook standards
-4. Extract one piece at a time
-5. Test after each extraction
-6. Update @.docs/CURRENT_STATE.md as you complete each item
-```
+### Adding a new feature (e.g. snippets)
 
-### Adding New Features (Phase 5, 6)
 ```
-1. Check @.docs/CURRENT_STATE.md for what's implemented
-2. Review @.docs/FEATURES.md for feature specifications
-3. Check @.docs/DATABASE.md if database changes are needed
-4. Review @.docs/ARCHITECTURE.md for integration points
+1. Check @.docs/CURRENT_STATE.md — confirm not already done
+2. Review @.docs/FEATURES.md for specifications
+3. Follow @.docs/plans/snippets-plan.md for task breakdown
+4. Check @.docs/DATABASE.md if schema changes are needed
 5. Follow @.docs/CODE_STANDARDS.md for all code
 6. Update @.docs/CURRENT_STATE.md when complete
 ```
 
-### Testing (Phase 7)
+### Testing (unit or E2E)
+
 ```
-1. Review @.docs/FEATURES.md for testing requirements
-2. Check @.docs/WORKFLOW.md for testing workflow
-3. Reference @.docs/ARCHITECTURE.md for system understanding
-4. Follow @.docs/CODE_STANDARDS.md for test code quality
-5. Update @.docs/CURRENT_STATE.md as tests are added
+1. Check @.docs/CURRENT_STATE.md for current test status
+2. Review @.docs/TESTING.md for patterns and scripts
+3. For E2E: follow @.docs/plans/e2e-testing-plan.md
+4. Update @.docs/CURRENT_STATE.md when complete
+```
+
+### Tooling (CI, release, hooks)
+
+```
+1. Check @.docs/CURRENT_STATE.md for what's already in place
+2. Review @.docs/WORKFLOW.md for process details
+3. Update @.docs/CURRENT_STATE.md when complete
 ```
 
 ## Troubleshooting
 
-### Agent Doesn't Have Context
-**Problem**: Agent seems unaware of project structure or requirements
+### Agent doesn't have context
 
-**Solution**: Explicitly reference documentation files:
 ```
-Please read @.docs/README.md first to understand the documentation structure, 
-then review @.docs/CURRENT_STATE.md for current status.
+Please read @.docs/README.md first, then @.docs/CURRENT_STATE.md for current status.
 ```
 
-### Agent Not Following Standards
-**Problem**: Code doesn't meet quality requirements
+### Agent not following standards
 
-**Solution**: Explicitly reference standards:
 ```
-Please review @.docs/CODE_STANDARDS.md and ensure all code follows 
-the 9 core standards, especially [specific standard].
-```
-
-### Agent Missing Architecture Context
-**Problem**: Code doesn't fit system architecture
-
-**Solution**: Reference architecture documentation:
-```
-Before implementing, please review @.docs/ARCHITECTURE.md to understand 
-how [component] should integrate with the existing system.
+Please review @.docs/CODE_STANDARDS.md and ensure all code follows the core standards.
 ```
 
 ## Documentation Maintenance
 
-### When to Update Documentation
+### When to update
 
-1. **After completing a phase item**: Update `.docs/CURRENT_STATE.md`
-2. **When adding new features**: Update `.docs/FEATURES.md` if specs change
-3. **When architecture changes**: Update `.docs/ARCHITECTURE.md`
-4. **When standards evolve**: Update `.docs/CODE_STANDARDS.md`
-5. **When database changes**: Update `.docs/DATABASE.md`
+1. **After completing a capability** — update `.docs/CURRENT_STATE.md` (table + What's Next)
+2. **When specs change** — update `.docs/FEATURES.md`
+3. **When architecture changes** — update `.docs/ARCHITECTURE.md`
+4. **When database changes** — update `.docs/DATABASE.md`
+5. **When a plan is finished** — move plan to `.docs/plans/archive/`, link from CURRENT_STATE
 
-### How to Request Documentation Updates
+### How to request updates
 
 ```
 Please update @.docs/CURRENT_STATE.md to:
-- Mark [item] as completed in Phase [X]
-- Update the "Last Updated" date to [today's date]
-- Add any new known issues if discovered
+- Set [capability] to ✅ in At a Glance
+- Remove it from What's Next
+- Update the "Last Updated" date
 ```
 
 ## Summary
 
-The key to effective AI agent interaction is:
-
-1. **Always reference specific documentation files** - Don't assume context
-2. **Follow the priority order** - CURRENT_STATE → FEATURES → CODE_STANDARDS → ARCHITECTURE
-3. **Reference existing patterns** - Show the agent similar code
-4. **Update documentation** - Keep `.docs/CURRENT_STATE.md` current
-5. **Verify standards** - Always check against `.docs/CODE_STANDARDS.md`
-
-By following this workflow, you ensure the AI agent has all necessary context and produces code that meets your project's standards and architecture.
-
+1. **Always reference specific documentation files**
+2. **Follow the priority order** — CURRENT_STATE → FEATURES → CODE_STANDARDS → ARCHITECTURE
+3. **Use capability names**, not historical phase numbers
+4. **Keep CURRENT_STATE short** — detail belongs in plan docs
+5. **Verify standards** — check against `.docs/CODE_STANDARDS.md`

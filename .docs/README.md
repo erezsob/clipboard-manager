@@ -26,11 +26,12 @@ When working on this project:
 ## File Descriptions
 
 ### CURRENT_STATE.md
-Frequently updated file tracking:
-- Implemented features
-- In-progress work
-- Next up items
-- Known issues
+Frequently updated status snapshot:
+- **At a Glance** — capability status table
+- **What's Next** — ordered backlog
+- **In Progress** — active work
+- **Implemented (by area)** — brief summary with file pointers
+- **Known issues**
 
 ### ARCHITECTURE.md
 System architecture including:
@@ -71,7 +72,7 @@ Development process:
 
 ### AGENT_WORKFLOW.md
 AI agent interaction guide:
-- How to start a new phase
+- How to start new work from CURRENT_STATE
 - Best practices for agent interaction
 - Template prompts
 - Troubleshooting guide

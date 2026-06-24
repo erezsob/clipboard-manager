@@ -58,7 +58,7 @@ CREATE INDEX IF NOT EXISTS idx_snippets_updated_at ON snippets(updated_at DESC);
 - Includes name, content, RTF, tags, and timestamps
 - RTF column preserves rich text when saving history items as snippets
 - Indexes for efficient searching and sorting
-- 🔨 Planned for Phase 6
+- 🔨 Planned — see [snippets-plan.md](./plans/snippets-plan.md)
 
 ## Migration Patterns
 

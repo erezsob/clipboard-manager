@@ -1,4 +1,4 @@
-# Phase 6: Persisted Snippets Management - Implementation Plan
+# Persisted Snippets Management — Implementation Plan
 
 **Created**: 2026-01-11
 **Updated**: 2026-01-18

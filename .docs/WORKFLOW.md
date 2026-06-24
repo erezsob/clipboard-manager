@@ -133,9 +133,9 @@ pnpm electron:copy:migrations
 ### Pre-Push Hook
 The pre-push hook automatically runs all checks. If any check fails, the push is blocked.
 
-## Testing Workflow (Planned)
+## Testing Workflow
 
-When automated testing is implemented (Phase 7):
+Unit and component tests are implemented. E2E tests are planned (see [e2e-testing-plan.md](./plans/e2e-testing-plan.md)).
 
 ### Test Scripts
 ```bash

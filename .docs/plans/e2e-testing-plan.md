@@ -146,7 +146,7 @@ Update `package.json`:
 ### 7. Update Documentation
 
 - Add E2E section to `.docs/TESTING.md`
-- Mark Phase 7 E2E items as complete in `.docs/CURRENT_STATE.md`
+- Update E2E row to ✅ in `.docs/CURRENT_STATE.md` At a Glance table
 
 ## Considerations
 
@@ -170,12 +170,12 @@ Tests require compiled Electron code (`electron-dist/`). The `test:e2e` script h
 
 ## Files to Create/Modify
 
-| File                       | Action                            |
-| -------------------------- | --------------------------------- |
-| `playwright.config.ts`     | Create - Playwright configuration |
-| `e2e/fixtures/electron.ts` | Create - Electron app fixture     |
-| `e2e/clipboard.spec.ts`    | Create - Clipboard flow tests     |
-| `e2e/navigation.spec.ts`   | Create - Navigation tests         |
-| `package.json`             | Modify - Add E2E test scripts     |
-| `.docs/TESTING.md`         | Modify - Add E2E documentation    |
-| `.docs/CURRENT_STATE.md`   | Modify - Update Phase 7 status    |
+| File                       | Action                                    |
+| -------------------------- | ----------------------------------------- |
+| `playwright.config.ts`     | Create - Playwright configuration         |
+| `e2e/fixtures/electron.ts` | Create - Electron app fixture             |
+| `e2e/clipboard.spec.ts`    | Create - Clipboard flow tests             |
+| `e2e/navigation.spec.ts`   | Create - Navigation tests                 |
+| `package.json`             | Modify - Add E2E test scripts             |
+| `.docs/TESTING.md`         | Modify - Add E2E documentation            |
+| `.docs/CURRENT_STATE.md`   | Modify - Update E2E status in At a Glance |

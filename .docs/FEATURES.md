@@ -133,25 +133,21 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   return normalizeWhitespace(newText) === normalizeWhitespace(recentText);
 }
 ```
-- ✅ Implemented in Phase 3
 
 ### Pagination Implementation
 - Initial load: `SELECT ... LIMIT 100`
 - Load more: `SELECT ... LIMIT 100 OFFSET {currentCount}`
 - Track loaded count in component state
-- ✅ Implemented in Phase 3
 
 ### System Tray (Electron)
 - Use Electron's `Tray` API (native macOS support)
 - Create tray icon with menu using `Menu.buildFromTemplate()`
 - Handle click events to show window
-- ✅ Implemented in Phase 1
 
 ### Error Handling & Retry
 - Wrap clipboard operations in try-catch
 - Implement exponential backoff retry (3 attempts: 1s, 2s, 4s)
 - Display user-friendly error messages
-- ✅ Implemented in Phase 1
 
 ### TanStack Query Integration
 - Replace manual state management with TanStack Query (React Query)
@@ -233,7 +229,6 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
 - **Accessibility**: 
   - Keyboard navigation support
   - ARIA labels for screen readers
-- ✅ Implemented in Phase 1
 
 ### Code Refactoring & Component Extraction
 - **Goal**: Improve code maintainability, readability, and testability by breaking down App.tsx
@@ -282,7 +277,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Better code organization and discoverability
 
 ### RTF Clipboard Support
-**Plan Document**: [`.docs/plans/rtf_clipboard_support.md`](.docs/plans/rtf_clipboard_support.md)
+**Plan Document**: [`.docs/plans/archive/rtf_clipboard_support.md`](.docs/plans/archive/rtf_clipboard_support.md) (completed)
 
 Add RTF format support to preserve rich text styling when copying/pasting clipboard items. Plain text continues for search/display; RTF stored and restored transparently.
 
@@ -295,7 +290,7 @@ Add RTF format support to preserve rich text styling when copying/pasting clipbo
   - HTML support can follow same pattern
 
 ### Functional Programming Refactor
-**Plan Document**: [`.docs/plans/fp-refactor-plan.md`](.docs/plans/fp-refactor-plan.md)
+**Plan Document**: [`.docs/plans/archive/fp-refactor-plan.md`](.docs/plans/archive/fp-refactor-plan.md) (completed)
 
 Introduce custom lightweight FP utilities and refactor the codebase to embrace functional programming principles: pure functions, immutability, function composition, and algebraic data types for error handling.
 
@@ -361,10 +356,9 @@ Introduce custom lightweight FP utilities and refactor the codebase to embrace f
 
 ### Nice to Have
 - 🔮 Smooth animations
-- 🔮 Settings window
 - 🔮 Enhanced error messages
 - ✅ TanStack Query integration for better data management
-- 🔮 Persisted snippets for frequently used text
-- 🔮 Comprehensive automated test suite (80%+ coverage)
-- 🔮 CI/CD pipeline with GitHub Actions
+- 🔨 Persisted snippets for frequently used text (see [CURRENT_STATE.md](./CURRENT_STATE.md))
+- ✅ Automated test suite — unit/component (Vitest); E2E still planned
+- 🟡 CI/CD pipeline — CI done; release workflow still planned
 
