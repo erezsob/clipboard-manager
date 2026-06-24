@@ -1,8 +1,8 @@
 import {
-	writePreferencesToFile,
-	getPreferencesPath,
 	type AppPreferences,
 	type createPreferencesStore,
+	getPreferencesPath,
+	writePreferencesToFile,
 } from "./preferences.js";
 
 export type LoginItemSettingsReader = () => {

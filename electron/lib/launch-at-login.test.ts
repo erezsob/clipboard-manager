@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	createLaunchAtLoginModule,
-	reconcileLaunchAtLogin,
 	type LoginItemSettingsReader,
+	reconcileLaunchAtLogin,
 } from "./launch-at-login.js";
 import type { AppPreferences } from "./preferences.js";
 
