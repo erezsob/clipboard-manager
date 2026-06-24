@@ -6,6 +6,10 @@ interface FooterProps {
 	isSettingsMenuOpen: boolean;
 	/** Callback to toggle settings menu */
 	onSettingsToggle: () => void;
+	/** Whether launch at login is enabled */
+	launchAtLogin: boolean;
+	/** Callback when Launch at login is toggled */
+	onLaunchAtLoginToggle: () => void;
 	/** Callback when Clear All is clicked */
 	onClearAll: () => void;
 	/** Callback when Quit is clicked */
@@ -21,6 +25,8 @@ interface FooterProps {
 export function Footer({
 	isSettingsMenuOpen,
 	onSettingsToggle,
+	launchAtLogin,
+	onLaunchAtLoginToggle,
 	onClearAll,
 	onQuit,
 	settingsMenuRef,
@@ -35,6 +41,8 @@ export function Footer({
 				<SettingsMenu
 					isOpen={isSettingsMenuOpen}
 					onToggle={onSettingsToggle}
+					launchAtLogin={launchAtLogin}
+					onLaunchAtLoginToggle={onLaunchAtLoginToggle}
 					onClearAll={onClearAll}
 					onQuit={onQuit}
 					menuRef={settingsMenuRef}

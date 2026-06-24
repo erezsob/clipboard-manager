@@ -18,6 +18,7 @@ export function App() {
 	useClipboardMonitor();
 
 	const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+	const [launchAtLogin, setLaunchAtLogin] = useState(true);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const settingsMenuRef = useRef<HTMLDivElement>(null);
 	const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -191,6 +192,44 @@ export function App() {
 	}, [setActionError, loadMore]);
 
 	/**
+	 * Handles settings menu toggle and refreshes launch-at-login state when opening
+	 */
+	const handleSettingsToggle = useCallback(() => {
+		setIsSettingsMenuOpen((open) => {
+			const willOpen = !open;
+
+			if (willOpen && window.electronAPI) {
+				void window.electronAPI.app
+					.getLaunchAtLogin()
+					.then(setLaunchAtLogin)
+					.catch((error) => {
+						console.error("Failed to fetch launch at login preference:", error);
+					});
+			}
+
+			return willOpen;
+		});
+	}, []);
+
+	/**
+	 * Handles launch at login preference toggle
+	 */
+	const handleLaunchAtLoginToggle = useCallback(async () => {
+		if (!window.electronAPI) return;
+
+		const nextValue = !launchAtLogin;
+		setLaunchAtLogin(nextValue);
+
+		const result = await window.electronAPI.app.setLaunchAtLogin(nextValue);
+		if (!result.success) {
+			setLaunchAtLogin(!nextValue);
+			setActionError(
+				result.error ?? "Couldn't update launch at login preference",
+			);
+		}
+	}, [launchAtLogin, setActionError]);
+
+	/**
 	 * Handles clear all from settings menu (closes menu first)
 	 */
 	const handleSettingsClearAll = useCallback(async () => {
@@ -241,7 +280,9 @@ export function App() {
 			{/* Footer with hint and settings */}
 			<Footer
 				isSettingsMenuOpen={isSettingsMenuOpen}
-				onSettingsToggle={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
+				onSettingsToggle={handleSettingsToggle}
+				launchAtLogin={launchAtLogin}
+				onLaunchAtLoginToggle={handleLaunchAtLoginToggle}
 				onClearAll={handleSettingsClearAll}
 				onQuit={handleQuit}
 				settingsMenuRef={settingsMenuRef}

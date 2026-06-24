@@ -1,6 +1,6 @@
 # Current Implementation Status
 
-**Last Updated**: 2026-01-17
+**Last Updated**: 2026-06-24
 
 ## ✅ Already Implemented
 
@@ -34,6 +34,9 @@
 - Recursive retry and wait functions with Result types
 - Pure transformation functions extracted from hooks
 - Encapsulated state modules in Electron main process
+- Launch at login preference (default ON, silent background start, settings toggle)
+- Preferences persistence via `preferences.json` in userData
+- Deferred Accessibility prompt when app opens at login
 
 ## 🔨 Needs Implementation
 
