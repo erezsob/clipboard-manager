@@ -9,7 +9,7 @@ export const DEFAULT_PREFERENCES = {
 	launchAtLogin: true,
 } as const satisfies AppPreferences;
 
-export const PREFERENCES_FILENAME = "preferences.json";
+const PREFERENCES_FILENAME = "preferences.json";
 
 export const getPreferencesPath = (userDataPath: string) =>
 	path.join(userDataPath, PREFERENCES_FILENAME);

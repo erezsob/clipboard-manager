@@ -46,9 +46,3 @@ export const promptAccessibilityIfNeeded = async (): Promise<void> => {
 		);
 	}
 };
-
-/** Resets session state — intended for tests only. */
-export const resetAccessibilityPromptState = (): void => {
-	accessibilityPromptShown = false;
-	skipAccessibilityOnStartup = false;
-};
