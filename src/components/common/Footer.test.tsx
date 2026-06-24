@@ -7,15 +7,17 @@ describe("Footer", () => {
 	const mockSettingsMenuRef = createRef<HTMLDivElement | null>();
 	const mockHandlers = {
 		onSettingsToggle: vi.fn(),
+		onLaunchAtLoginToggle: vi.fn(),
 		onClearAll: vi.fn(),
 		onQuit: vi.fn(),
 	} as const satisfies Omit<
 		ComponentProps<typeof Footer>,
-		"isSettingsMenuOpen" | "settingsMenuRef"
+		"isSettingsMenuOpen" | "settingsMenuRef" | "launchAtLogin"
 	>;
 
 	const defaultProps = {
 		isSettingsMenuOpen: false,
+		launchAtLogin: true,
 		settingsMenuRef: mockSettingsMenuRef,
 		...mockHandlers,
 	} as const satisfies ComponentProps<typeof Footer>;
@@ -53,6 +55,9 @@ describe("Footer", () => {
 		render(<Footer {...defaultProps} isSettingsMenuOpen={true} />);
 
 		expect(screen.getByRole("menu")).toBeInTheDocument();
+		expect(
+			screen.getByRole("menuitemcheckbox", { name: "Launch at login" }),
+		).toBeInTheDocument();
 		expect(
 			screen.getByRole("menuitem", { name: /Clear All/ }),
 		).toBeInTheDocument();

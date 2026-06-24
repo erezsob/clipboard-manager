@@ -1,4 +1,4 @@
-import { Settings, Trash2 } from "lucide-react";
+import { Check, Settings, Trash2 } from "lucide-react";
 import type { RefObject } from "react";
 
 interface SettingsMenuProps {
@@ -6,6 +6,10 @@ interface SettingsMenuProps {
 	isOpen: boolean;
 	/** Callback to toggle menu open state */
 	onToggle: () => void;
+	/** Whether launch at login is enabled */
+	launchAtLogin: boolean;
+	/** Callback when Launch at login is toggled */
+	onLaunchAtLoginToggle: () => void;
 	/** Callback when Clear All is clicked */
 	onClearAll: () => void;
 	/** Callback when Quit is clicked */
@@ -15,12 +19,14 @@ interface SettingsMenuProps {
 }
 
 /**
- * Settings dropdown menu with Clear All and Quit options
+ * Settings dropdown menu with launch at login, Clear All, and Quit options
  * Positioned in the bottom right corner of the footer
  */
 export function SettingsMenu({
 	isOpen,
 	onToggle,
+	launchAtLogin,
+	onLaunchAtLoginToggle,
 	onClearAll,
 	onQuit,
 	menuRef,
@@ -40,9 +46,23 @@ export function SettingsMenu({
 			</button>
 			{isOpen && (
 				<div
-					className="absolute bottom-full right-0 mb-2 w-40 bg-gray-700 border border-gray-600 rounded-lg shadow-lg overflow-hidden z-50"
+					className="absolute bottom-full right-0 mb-2 w-48 bg-gray-700 border border-gray-600 rounded-lg shadow-lg overflow-hidden z-50"
 					role="menu"
 				>
+					<button
+						type="button"
+						onClick={onLaunchAtLoginToggle}
+						className="w-full px-4 py-2 text-left text-sm text-white hover:bg-gray-600 transition-colors flex items-center gap-2"
+						role="menuitemcheckbox"
+						aria-checked={launchAtLogin}
+					>
+						<span className="w-4 h-4 flex items-center justify-center">
+							{launchAtLogin && (
+								<Check className="w-4 h-4" aria-hidden="true" />
+							)}
+						</span>
+						Launch at login
+					</button>
 					<button
 						type="button"
 						onClick={onClearAll}

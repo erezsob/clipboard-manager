@@ -42,6 +42,10 @@ export interface MockElectronAPI {
 	};
 	app: {
 		quit: Mock<() => Promise<void>>;
+		getLaunchAtLogin: Mock<() => Promise<boolean>>;
+		setLaunchAtLogin: Mock<
+			(enabled: boolean) => Promise<{ success: boolean; error?: string }>
+		>;
 	};
 }
 
@@ -71,6 +75,8 @@ export function createMockElectronAPI(): MockElectronAPI {
 		},
 		app: {
 			quit: vi.fn().mockResolvedValue(undefined),
+			getLaunchAtLogin: vi.fn().mockResolvedValue(true),
+			setLaunchAtLogin: vi.fn().mockResolvedValue({ success: true }),
 		},
 	};
 }

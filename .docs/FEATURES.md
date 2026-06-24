@@ -70,6 +70,7 @@
 - **Icon**: Settings cog icon (⚙️)
 - **Behavior**: Click to open dropdown menu
 - **Menu Items**:
+  - Launch at login (checkbox toggle, default ON)
   - Clear All (with confirmation dialog)
   - Quit (closes application)
 - **UI Details**:
@@ -222,6 +223,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - Handle click outside to close
   - Handle menu item clicks
 - **Menu Items**:
+  - Launch at login: Checkbox toggle persisted in `preferences.json`, synced with macOS Login Items (default ON)
   - Clear All: Triggers confirmation dialog, then calls `clearAllHistory()`
   - Quit: Calls Electron API to close application (`app.quit()`)
 - **Styling**: 
@@ -245,7 +247,7 @@ function isNearDuplicate(newText: string, recentText: string): boolean {
   - `SearchBar`: Search input with clear button and favorites filter toggle
   - `HistoryItem`: Individual history item with content, date, and action buttons (star, copy, delete)
   - `HistoryList`: Container for history items with empty state handling
-  - `SettingsMenu`: Dropdown menu with Clear All and Quit options
+  - `SettingsMenu`: Dropdown menu with Launch at login, Clear All, and Quit options
   - `Footer`: Footer bar with keyboard hints and settings menu
 - **Utility Functions**:
   - Move `formatDate` to `src/lib/utils.ts`

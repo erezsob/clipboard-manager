@@ -40,6 +40,10 @@ interface ElectronAPI {
 	};
 	app: {
 		quit: () => Promise<void>;
+		getLaunchAtLogin: () => Promise<boolean>;
+		setLaunchAtLogin: (
+			enabled: boolean,
+		) => Promise<{ success: boolean; error?: string }>;
 	};
 }
 

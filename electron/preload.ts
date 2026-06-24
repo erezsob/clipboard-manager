@@ -46,5 +46,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	},
 	app: {
 		quit: () => ipcRenderer.invoke("app:quit") as Promise<void>,
+		getLaunchAtLogin: () =>
+			ipcRenderer.invoke("app:getLaunchAtLogin") as Promise<boolean>,
+		setLaunchAtLogin: (enabled: boolean) =>
+			ipcRenderer.invoke("app:setLaunchAtLogin", enabled) as Promise<{
+				success: boolean;
+				error?: string;
+			}>,
 	},
 });
